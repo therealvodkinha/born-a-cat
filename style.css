@@ -7,6 +7,7 @@
   --ink: #2a211c;
   --muted: #7d6f63;
   --accent: #c4573a;
+  --good: #2e8b4e;
   --accent-ink: #fbf5ea;
   --card: #f8f1e4;
   --disc: #e7c58a;
@@ -27,6 +28,7 @@ body[data-city="Rabat"] {
   --ink: #1d2b4f;
   --muted: #5e6a86;
   --accent: #2c5ba8;
+  --good: #2e8b4e;
   --accent-ink: #fbf5ea;
   --card: #fbf5ea;
   --disc: #eab84a;
@@ -43,6 +45,7 @@ body[data-city="Tokyo"] {
   --ink: #f1e8d8;
   --muted: #a6a2bd;
   --accent: #e8503a;
+  --good: #6fd38f;
   --accent-ink: #fff7ec;
   --card: #252a4d;
   --disc: #f3d68a;
@@ -418,7 +421,14 @@ body[data-cond="strong"] .cat > .body { transform: scaleX(1.06); }
   background: var(--card);
   color: var(--ink);
 }
-.pill.good { border-color: var(--accent); color: var(--accent); }
+.pill.good { border-color: var(--good); color: var(--good); }
+.pill.good::before { content: "+ "; }
+.status .pill { animation: pop-in 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+.status .pill:nth-child(2) { animation-delay: 0.06s; }
+.status .pill:nth-child(3) { animation-delay: 0.12s; }
+.status .pill:nth-child(4) { animation-delay: 0.18s; }
+.status .pill:nth-child(n+5) { animation-delay: 0.24s; }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.4); } }
 .pill.bad { border-style: dashed; color: var(--muted); border-color: var(--muted); }
 .pill.cond-strong { background: #f0bf3c; color: #2a211c; border-color: #2a211c; }
 .pill.cond-weak { background: transparent; color: var(--muted); border-color: var(--muted); border-style: dashed; }
@@ -436,7 +446,7 @@ body[data-cond="strong"] .cat > .body { transform: scaleX(1.06); }
   rotate: -2deg;
   animation: stamp 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
-.gain.good { color: var(--accent); }
+.gain.good { color: var(--good); }
 .gain.bad { color: var(--muted); border-style: dashed; }
 .gain:nth-child(2) { animation-delay: 0.15s; rotate: 1.5deg; }
 .gain-line { font-style: italic; color: var(--muted); max-width: 30ch; margin: 0.2em 0 0; animation: enter 0.5s 0.3s both; }
@@ -575,6 +585,18 @@ body[data-city="Tokyo"] .end-card[data-rarity="legendary"] {
   .story { font-size: 1.25rem; }
   .scene { width: 260px; height: 225px; }
 }
+
+/* The cat reacts to what just happened: a hop when it went well,
+   a small shiver when it went badly. */
+#result .mini-cat .cat { transform-origin: 50% 100%; }
+body[data-mood="happy"] #result .mini-cat .cat { animation: hop 0.7s 0.15s cubic-bezier(0.3, 1.4, 0.5, 1) 2; }
+body[data-mood="sad"] #result .mini-cat .cat { animation: shiver 0.5s 0.15s ease-in-out; }
+@keyframes hop { 40% { transform: translateY(-14px) scaleY(1.04); } 70% { transform: scaleY(0.94); } }
+@keyframes shiver { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+
+/* The sun or moon behind the cat brightens on a good outcome. */
+body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
+@keyframes flare { 30% { transform: scale(1.18); filter: brightness(1.15); } }
 
 /* People who asked their phone for less motion get none. */
 @media (prefers-reduced-motion: reduce) {
