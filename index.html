@@ -19,10 +19,30 @@
     <p class="small">You were born in</p>
     <h2 id="city-name"></h2>
     <p id="city-line" class="tagline"></p>
-    <button id="again-btn" type="button" class="secondary">Be born again</button>
-    <p class="small muted">The story starts here soon.</p>
+    <button id="start-btn" type="button">Open your eyes</button>
+    <button id="again-btn" type="button" class="secondary">Be born somewhere else</button>
   </main>
 
+  <main class="screen hidden" id="event">
+    <p class="small muted-top" id="event-count"></p>
+    <p class="story" id="event-text"></p>
+    <div class="choices" id="choices"></div>
+  </main>
+
+  <main class="screen hidden" id="result">
+    <p class="story" id="result-text"></p>
+    <button id="next-btn" type="button">Continue</button>
+  </main>
+
+  <main class="screen hidden" id="ending">
+    <p class="paw" aria-hidden="true">🐾</p>
+    <h2 id="ending-title"></h2>
+    <p class="story" id="ending-text"></p>
+    <p class="story last" id="ending-last"></p>
+    <button id="restart-btn" type="button">Be born again</button>
+  </main>
+
+  <script src="stories.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
