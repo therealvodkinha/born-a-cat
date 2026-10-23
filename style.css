@@ -56,3 +56,15 @@ button.secondary {
 }
 
 button:active { transform: scale(0.97); }
+
+.muted-top { color: var(--muted); margin-bottom: 1.2em; }
+
+.story { font-size: 1.15rem; line-height: 1.6; text-align: left; }
+.story.last { font-style: italic; text-align: center; margin-top: 1.5em; }
+
+#ending h2 { font-size: 2.2rem; }
+
+.choices { display: flex; flex-direction: column; gap: 0.8em; margin-top: 1.5em; }
+.choices button { margin-top: 0; width: 100%; padding: 0.8em 1.2em; line-height: 1.3; }
+
+#birth button { display: block; margin-left: auto; margin-right: auto; }
