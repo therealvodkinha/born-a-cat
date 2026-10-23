@@ -138,7 +138,7 @@ const STORIES = {
         name: "Young",
         events: [
           {
-            text: "Winter. It has rained on Rabat for three days. Every dry corner near the market is taken, and the best one belongs to a big grey tom with half an ear and zero patience.",
+            text: "Winter. It has rained on Rabat for three days. Every dry corner near the market is taken, and the best one belongs to a huge orange tom who terrorises the whole neighbourhood, humans included.",
             choices: [
               {
                 label: "Take his spot",
@@ -217,6 +217,25 @@ const STORIES = {
               },
             ],
           },
+          {
+            text: "Outside the hanout, six cats sit in a row on the step, like customers waiting their turn. The owner gives the scraps to whoever looks the most tragic. The competition is serious.",
+            choices: [
+              {
+                label: "Look as tragic as possible",
+                chance: 0.5,
+                bonus: { clever: 0.2, shy: -0.1 },
+                good: "You sit in the middle, ears down, one paw slightly raised. Award-winning. The owner sighs and gives you the end of the mortadella. The other six will never forgive you.",
+                bad: "A thin old cat with one eye sits down next to you. You never stood a chance. You go home with nothing but respect for her.",
+              },
+              {
+                label: "Slip inside behind a customer",
+                chance: 0.4,
+                bonus: { brave: 0.2, curious: 0.1 },
+                good: "Between the crates of Coca and the bags of flour, you find a packet of biscuits that “fell”. You eat it in the street, dodging two cars and a scooter without even looking up.",
+                bad: "The owner sees you. “Barra!” You run out, straight into the road. A car brakes. You make it to the other side and sit there washing your paw, as if nothing happened. Your heart disagrees.",
+              },
+            ],
+          },
         ],
       },
       // --------------------------------------------------------
@@ -250,7 +269,7 @@ const STORIES = {
                 label: "Climb into the box",
                 chance: 0.7,
                 bonus: { curious: 0.2, shy: -0.2 },
-                good: "The box smells like her shoes. You fall asleep before the taxi even moves. You wake up in an apartment in Agdal, with a radiator. A radiator.",
+                good: "The box smells like her shoes. You fall asleep before the taxi even moves. You wake up in a house with a garden in Souissi. There is a radiator. A radiator.",
                 bad: "In the petit taxi, the panic arrives all at once. You scratch, you jump out at a red light, you run. She shouts your name through the window. You didn’t know you had one.",
                 goodMark: "home",
               },
@@ -264,7 +283,7 @@ const STORIES = {
           },
           {
             needs: "gang",
-            text: "The old grey tom is getting slow. He sleeps more than he guards. The younger cats are looking at you. The fish market could be yours.",
+            text: "The big orange tom is getting slow. He sleeps more than he terrorises. The younger cats are looking at you. The fish market could be yours.",
             choices: [
               {
                 label: "Take his place",
@@ -444,7 +463,7 @@ const STORIES = {
               {
                 label: "Teach it your spots",
                 chance: 0.8,
-                good: "The terrace with the water. The bakery’s back door. The fisherman who keeps heads. One day it will teach someone else, and get half of it wrong.",
+                good: "The hanout that gives cheese. The bakery’s back door. The fisherman who keeps heads. One day it will teach someone else, and get half of it wrong.",
                 bad: "It doesn’t listen. Young cats never listen. You didn’t either.",
               },
             ],
@@ -470,7 +489,7 @@ const STORIES = {
           {
             needs: "home",
             notIf: "left",
-            text: "You are old. You live on a windowsill in Agdal, in the sun. The girl is grown up. Every morning before work, she tells you her plans for the day. You don’t care. You listen anyway.",
+            text: "You are old. You live on a windowsill in Souissi, in the sun. The girl is grown up. Every morning before work, she tells you her plans for the day. You don’t care. You listen anyway.",
             choices: [
               {
                 label: "Wait for her at the door",
@@ -483,6 +502,27 @@ const STORIES = {
                 chance: 0.9,
                 good: "The sun moves across the floor. You move with it, one tile at a time. It’s a full-time job.",
                 bad: "They built a building across the street. The sun comes later now. You find a new spot, slower than before.",
+              },
+            ],
+          },
+          {
+            needs: "home",
+            notIf: "left",
+            text: "You have a house, a garden and a cushion. You still do your rounds anyway: the neighbours’ garden, the wall, the street of the hanout. Today, halfway there, you run into her, walking the other way.",
+            choices: [
+              {
+                label: "Meow once and keep walking",
+                chance: 0.8,
+                bonus: { clever: 0.1 },
+                good: "One meow. A quick “hello, I’m busy”. You don’t follow her. She stands in the street laughing alone like an idiot. You are home before her, asleep on the cushion, as if you never left.",
+                bad: "She calls your name, loudly, in front of the whole street. Three hanout cats saw it. You keep walking. Your reputation will take weeks to recover.",
+              },
+              {
+                label: "Walk with her to the hanout",
+                chance: 0.6,
+                bonus: { curious: 0.1, shy: -0.1 },
+                good: "You walk next to her the whole way, tail up. The owner gives you a slice of cheese like a regular customer. You are a regular customer.",
+                bad: "Halfway there, you remember you had somewhere to be. You leave without explaining. She buys bread alone. She is used to it.",
               },
             ],
           },
