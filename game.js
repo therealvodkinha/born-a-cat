@@ -9,29 +9,49 @@ const screens = {
   ending: document.getElementById("ending"),
 };
 
-let city = null;      // name of the city, e.g. "Rabat"
-let step = 0;         // which event we are on
-let goodCount = 0;    // how many choices went well
+let city = null;        // name of the city, e.g. "Rabat"
+let trait = null;       // the cat's trait, from TRAITS
+let step = 0;           // which life stage we are on
+let goodCount = 0;      // how many choices went well
+let marks = new Set();  // things the cat remembers (see "mark" in stories.js)
+
+function pick(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 function show(name) {
   for (const key in screens) screens[key].classList.toggle("hidden", key !== name);
   window.scrollTo(0, 0);
 }
 
+// An event, choice outcome or ending can only happen if its marks allow it.
+function allowed(item) {
+  if (item.needs && !marks.has(item.needs)) return false;
+  if (item.notIf && marks.has(item.notIf)) return false;
+  return true;
+}
+
 function beBorn() {
-  const names = Object.keys(STORIES);
-  city = names[Math.floor(Math.random() * names.length)];
+  city = pick(Object.keys(STORIES));
+  trait = pick(TRAITS);
   step = 0;
   goodCount = 0;
+  marks = new Set();
   document.getElementById("city-name").textContent = city;
   document.getElementById("city-line").textContent = STORIES[city].line;
+  document.getElementById("trait-line").textContent = trait.line;
   show("birth");
 }
 
 function showEvent() {
-  const event = STORIES[city].events[step];
+  const stage = STORIES[city].stages[step];
+  const possible = stage.events.filter(allowed);
+  // Follow-ups (events that need a mark) are favoured when they can happen.
+  const followUps = possible.filter((e) => e.needs);
+  const event = followUps.length && Math.random() < 0.7 ? pick(followUps) : pick(possible);
+
   document.getElementById("event-count").textContent =
-    "Chapter " + (step + 1) + " of " + STORIES[city].events.length;
+    stage.name + " · " + (step + 1) + "/" + STORIES[city].stages.length;
   document.getElementById("event-text").textContent = event.text;
 
   const box = document.getElementById("choices");
@@ -47,24 +67,30 @@ function showEvent() {
 }
 
 function choose(choice) {
-  const wentWell = Math.random() < choice.chance;
+  const bonus = (choice.bonus && choice.bonus[trait.id]) || 0;
+  const chance = Math.min(0.95, Math.max(0.05, choice.chance + bonus));
+  const wentWell = Math.random() < chance;
   if (wentWell) goodCount++;
+  const mark = wentWell ? choice.goodMark : choice.badMark;
+  if (mark) marks.add(mark);
   document.getElementById("result-text").textContent = wentWell ? choice.good : choice.bad;
   show("result");
 }
 
 function next() {
   step++;
-  if (step < STORIES[city].events.length) showEvent();
+  if (step < STORIES[city].stages.length) showEvent();
   else showEnding();
 }
 
 function showEnding() {
-  const ending = STORIES[city].ending;
-  const lucky = goodCount * 2 >= STORIES[city].events.length;
+  const luck = goodCount * 2 >= STORIES[city].stages.length ? "lucky" : "unlucky";
+  const endings = STORIES[city].endings.filter((e) => allowed(e) && (!e.luck || e.luck === luck));
+  // Endings with conditions win over the plain ones.
+  const special = endings.filter((e) => e.needs || e.luck);
+  const ending = pick(special.length ? special : endings);
   document.getElementById("ending-title").textContent = ending.title;
   document.getElementById("ending-text").textContent = ending.text;
-  document.getElementById("ending-last").textContent = lucky ? ending.lucky : ending.unlucky;
   show("ending");
 }
 
