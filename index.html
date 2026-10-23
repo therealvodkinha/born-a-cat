@@ -2,46 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Born a Cat</title>
   <meta name="description" content="You are born as a cat, somewhere in the world. A short game about chance.">
+  <meta name="theme-color" content="#efe6d6">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-mood="asleep">
+  <div class="horizon" id="horizon" aria-hidden="true"></div>
+
   <main class="screen" id="home">
-    <p class="paw" aria-hidden="true">🐾</p>
-    <h1>Born a Cat</h1>
+    <div class="scene">
+      <div class="disc"></div>
+      <div class="cat-slot"></div>
+    </div>
+    <h1>Born <em>a</em> Cat</h1>
     <p class="tagline">Somewhere in the world, a kitten opens its eyes.<br>It could be you.</p>
     <button id="born-btn" type="button">Be born</button>
   </main>
 
   <main class="screen hidden" id="birth">
-    <p class="small">You were born in</p>
+    <div class="scene">
+      <div class="disc"></div>
+      <div class="scene-city" id="scene-city"></div>
+      <div class="cat-slot"></div>
+    </div>
+    <p class="label">You were born in</p>
     <h2 id="city-name"></h2>
     <p id="city-line" class="tagline"></p>
     <p id="trait-line" class="tagline trait"></p>
-    <button id="start-btn" type="button">Open your eyes</button>
-    <button id="again-btn" type="button" class="secondary">Be born somewhere else</button>
+    <div class="actions">
+      <button id="start-btn" type="button">Open your eyes</button>
+      <button id="again-btn" type="button" class="secondary">Be born somewhere else</button>
+    </div>
   </main>
 
   <main class="screen hidden" id="event">
-    <p class="small muted-top" id="event-count"></p>
+    <header class="life">
+      <p class="label" id="event-count"></p>
+      <div class="paws" id="paws"></div>
+    </header>
     <p class="story" id="event-text"></p>
     <div class="choices" id="choices"></div>
   </main>
 
   <main class="screen hidden" id="result">
+    <div class="mini-cat cat-slot"></div>
     <p class="story" id="result-text"></p>
-    <button id="next-btn" type="button">Continue</button>
+    <div class="actions">
+      <button id="next-btn" type="button">Continue</button>
+    </div>
   </main>
 
   <main class="screen hidden" id="ending">
-    <p class="paw" aria-hidden="true">🐾</p>
+    <div class="scene small">
+      <div class="disc"></div>
+      <div class="cat-slot"></div>
+    </div>
     <h2 id="ending-title"></h2>
     <p class="story" id="ending-text"></p>
-    <button id="restart-btn" type="button">Be born again</button>
+    <div class="actions">
+      <button id="restart-btn" type="button">Be born again</button>
+    </div>
   </main>
 
+  <script src="art.js"></script>
   <script src="stories.js"></script>
   <script src="game.js"></script>
 </body>

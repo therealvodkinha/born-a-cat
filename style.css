@@ -1,70 +1,382 @@
+/* ============================================================
+   Colours. The page starts with the "home" colours, then each
+   city has its own palette (set by data-city on <body>).
+   ============================================================ */
 :root {
-  --bg: #f6efe6;
-  --ink: #2b2420;
-  --muted: #8a7d72;
-  --accent: #d9734e;
-  --accent-ink: #ffffff;
+  --bg: #efe6d6;
+  --ink: #2a211c;
+  --muted: #7d6f63;
+  --accent: #c4573a;
+  --accent-ink: #fbf5ea;
+  --card: #f8f1e4;
+  --disc: #e7c58a;
+  --cat-line: #2a211c;
+  --sky-far: #d9c9ae;
+  --sky-near: #b98d5e;
+  --sky-line: #2a211c;
+  --window: #e7c58a;
+  --grain-blend: multiply;
+  --grain-opacity: 0.32;
+  --title: "Fraunces", Georgia, serif;
+  --text: "Literata", Georgia, serif;
 }
 
+/* Rabat: lime-washed walls, Oudaya blue, ochre sun. */
+body[data-city="Rabat"] {
+  --bg: #f3ead9;
+  --ink: #1d2b4f;
+  --muted: #5e6a86;
+  --accent: #2c5ba8;
+  --accent-ink: #fbf5ea;
+  --card: #fbf5ea;
+  --disc: #eab84a;
+  --cat-line: #1d2b4f;
+  --sky-far: #a9c0e2;
+  --sky-near: #c4683b;
+  --sky-line: #2d5a3a;
+  --window: #fbf5ea;
+}
+
+/* Tokyo: indigo evening, vermilion, lantern light. */
+body[data-city="Tokyo"] {
+  --bg: #1b1f3a;
+  --ink: #f1e8d8;
+  --muted: #a6a2bd;
+  --accent: #e8503a;
+  --accent-ink: #fff7ec;
+  --card: #252a4d;
+  --disc: #f3d68a;
+  --cat-line: #15172b;
+  --sky-far: #2c3366;
+  --sky-near: #0e1126;
+  --sky-line: #0e1126;
+  --window: #f3c969;
+  --grain-blend: soft-light;
+  --grain-opacity: 0.5;
+}
+
+/* After each choice, the sun/moon behind the cat warms up or cools down. */
+body[data-tone="bad"] { --disc: #b7b3c4; }
+
+/* ============================================================
+   Page
+   ============================================================ */
 * { box-sizing: border-box; }
+
+html { background: var(--bg); }
 
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 24px 18px 110px;
+  transition: background-color 0.8s ease, color 0.8s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Paper grain over everything, so the page doesn't look flat. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .4 0 0 0 0 .3 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .screen {
-  max-width: 420px;
+  max-width: 440px;
   width: 100%;
   text-align: center;
+  position: relative;
+  z-index: 1;
+  animation: enter 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 .hidden { display: none; }
 
-.paw { font-size: 3rem; margin: 0; }
+@keyframes enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
 
-h1 { font-size: 2.6rem; margin: 0.3em 0; }
-h2 { font-size: 3rem; margin: 0.1em 0 0.4em; color: var(--accent); }
+/* The city along the bottom of the screen. */
+.horizon {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 92px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+body[data-city] .horizon { opacity: 0.9; }
+.horizon .skyline { width: 100%; height: 100%; display: block; }
 
-.tagline { font-size: 1.15rem; line-height: 1.5; }
-.small { font-size: 0.95rem; margin: 0; }
-.muted { color: var(--muted); margin-top: 2em; }
+/* ============================================================
+   Text
+   ============================================================ */
+h1, h2 {
+  font-family: var(--title);
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
 
+h1 { font-size: clamp(3rem, 15vw, 4.4rem); margin: 0.15em 0 0.25em; }
+h1 em { font-weight: 400; font-style: italic; color: var(--accent); }
+
+h2 { font-size: clamp(2.8rem, 14vw, 4rem); margin: 0.05em 0 0.3em; color: var(--accent); }
+
+#ending h2 {
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  font-style: italic;
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 0.2em;
+}
+
+/* the city name falls in, letter by letter */
+#city-name span {
+  display: inline-block;
+  animation: drop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+@keyframes drop {
+  from { opacity: 0; transform: translateY(-0.5em) rotate(-8deg); }
+  to { opacity: 1; transform: none; }
+}
+
+.tagline { font-size: 1.12rem; line-height: 1.55; margin: 0.5em auto; max-width: 30ch; }
+.trait { font-style: italic; color: var(--muted); }
+
+.label {
+  font-family: var(--title);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.story {
+  font-size: 1.15rem;
+  line-height: 1.65;
+  text-align: left;
+  margin: 0;
+}
+
+/* Text that is still being typed takes its space, but stays invisible,
+   so the page doesn't jump while it appears. */
+.story .rest { visibility: hidden; }
+
+/* ============================================================
+   Buttons: printed paper stamps rather than app buttons.
+   ============================================================ */
 button {
-  margin-top: 1.5em;
-  font: inherit;
-  font-size: 1.2rem;
-  padding: 0.8em 2.2em;
-  border: none;
-  border-radius: 999px;
+  font-family: var(--title);
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding: 0.75em 1.8em;
+  border: 2px solid var(--ink);
+  border-radius: 4px 10px 6px 12px;
   background: var(--accent);
   color: var(--accent-ink);
   cursor: pointer;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.4s ease;
 }
+
+button:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+button:focus-visible { outline: 3px dashed var(--accent); outline-offset: 4px; }
 
 button.secondary {
   background: transparent;
-  color: var(--accent);
-  border: 2px solid var(--accent);
+  color: var(--ink);
+  box-shadow: none;
+  border-style: dashed;
+  font-size: 1rem;
 }
 
-button:active { transform: scale(0.97); }
+.actions { display: flex; flex-direction: column; align-items: center; gap: 0.9em; margin-top: 1.8em; }
 
-.muted-top { color: var(--muted); margin-bottom: 1.2em; }
+/* Choices are little cards, each one slightly crooked. */
+.choices { display: flex; flex-direction: column; gap: 0.9em; margin-top: 1.8em; }
+.choices button {
+  width: 100%;
+  text-align: left;
+  padding: 0.85em 1.1em;
+  line-height: 1.3;
+  font-size: 1.08rem;
+  background: var(--card);
+  color: var(--ink);
+  animation: deal 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+.choices button:nth-child(odd) { rotate: -0.6deg; }
+.choices button:nth-child(even) { rotate: 0.5deg; }
+.choices button:nth-child(2) { animation-delay: 0.12s; }
+.choices button:nth-child(3) { animation-delay: 0.24s; }
+.choices button::before { content: "→ "; color: var(--accent); }
 
-.story { font-size: 1.15rem; line-height: 1.6; text-align: left; }
-.trait { font-style: italic; color: var(--muted); }
+@keyframes deal {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
 
-#ending h2 { font-size: 2.2rem; }
+/* Nothing to press until the text has finished appearing. */
+.waiting .choices,
+.waiting .actions { visibility: hidden; }
 
-.choices { display: flex; flex-direction: column; gap: 0.8em; margin-top: 1.5em; }
-.choices button { margin-top: 0; width: 100%; padding: 0.8em 1.2em; line-height: 1.3; }
+/* ============================================================
+   The scene: a sun or moon, the city, and the cat in front.
+   ============================================================ */
+.scene {
+  position: relative;
+  width: 230px;
+  height: 200px;
+  margin: 0 auto 0.4em;
+}
+.scene.small { width: 170px; height: 150px; }
 
-#birth button { display: block; margin-left: auto; margin-right: auto; }
+.disc {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  width: 72%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: var(--disc);
+  transition: background-color 0.8s ease;
+  animation: breathe 6s ease-in-out infinite;
+}
+@keyframes breathe { 50% { scale: 1.04; } }
+
+.scene-city {
+  position: absolute;
+  inset: auto 0 6px;
+  height: 70px;
+  border-radius: 0 0 50% 50% / 0 0 20% 20%;
+  overflow: hidden;
+}
+.scene-city .skyline { width: 100%; height: 100%; display: block; }
+
+.scene .cat-slot {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 62%;
+  translate: -50% 0;
+}
+
+.mini-cat { position: relative; width: 96px; margin: 0 auto 0.8em; }
+.mini-cat::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 76%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: var(--disc);
+  transition: background-color 0.8s ease;
+}
+.mini-cat .cat { position: relative; }
+
+/* ============================================================
+   Skylines (drawn in art.js)
+   ============================================================ */
+.sky-far { fill: var(--sky-far); }
+.sky-near { fill: var(--sky-near); }
+.sky-bg { fill: var(--bg); }
+.sky-window { fill: var(--window); }
+.sky-window.glow { filter: drop-shadow(0 0 4px var(--window)); }
+.sky-line { fill: none; stroke: var(--sky-line); stroke-width: 2.4; stroke-linecap: round; }
+.sky-line.thin { stroke-width: 0.8; }
+body[data-city="Tokyo"] .sky-line { stroke: #4b5290; }
+
+/* ============================================================
+   The cat (drawn in art.js)
+   ============================================================ */
+.cat { display: block; width: 100%; height: auto; overflow: visible; }
+.cat .body, .cat .head, .cat .ear {
+  fill: var(--coat);
+  stroke: var(--cat-line);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+.cat .ear-in { fill: var(--inner); }
+.cat .ol { fill: none; stroke: var(--cat-line); stroke-width: 10.8; stroke-linecap: round; }
+.cat .fill-stroke { fill: none; stroke: var(--coat); stroke-width: 6; stroke-linecap: round; }
+.cat .patch { fill: var(--patch); opacity: var(--patch-o); }
+.cat .patch2 { fill: var(--patch2); opacity: var(--patch-o); }
+.cat .bib { fill: var(--bib); opacity: var(--bib-o); }
+.cat .stripes { fill: none; stroke: var(--stripe); stroke-width: 2.4; stroke-linecap: round; opacity: var(--stripe-o); }
+.cat .line { fill: none; stroke: var(--cat-line); stroke-width: 2.2; stroke-linecap: round; }
+.cat .line.thin { stroke-width: 1.5; }
+.cat .whiskers { fill: none; stroke: var(--cat-line); stroke-width: 1; opacity: 0.55; }
+.cat .eye { fill: var(--eye); }
+.cat .pupil { fill: #111; }
+.cat .nose { fill: var(--nose); }
+.cat .cat-shadow { fill: var(--cat-line); opacity: 0.18; }
+
+/* on a black coat, the drawing lines need to be light to show */
+body[data-coat="black"] .cat .line,
+body[data-coat="tuxedo"] .cat .line { stroke: #8a7f78; }
+
+/* the tail sways, the head tilts, the eyes blink */
+.cat-tail { transform-origin: 80px 104px; animation: sway 3.2s ease-in-out infinite; }
+@keyframes sway { 50% { transform: rotate(-9deg); } }
+
+.cat-head { transform-origin: 58px 60px; animation: tilt 7s ease-in-out infinite; }
+@keyframes tilt { 0%, 60%, 100% { transform: none; } 70%, 85% { transform: rotate(-6deg); } }
+
+.eyes-open { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+@keyframes blink { 0%, 94%, 100% { transform: none; } 97% { transform: scaleY(0.1); } }
+
+/* moods: which eyes are shown */
+.cat .eyes { display: none; }
+body[data-mood="awake"] .cat .eyes-open,
+body[data-mood="happy"] .cat .eyes-happy,
+body[data-mood="sad"] .cat .eyes-sad,
+body[data-mood="asleep"] .cat .eyes-closed { display: inline; }
+
+body[data-mood="asleep"] .cat-tail { animation-duration: 6s; }
+body[data-mood="asleep"] .cat-head { animation: none; transform: rotate(4deg); }
+body[data-mood="sad"] .cat-tail { animation: none; transform: rotate(14deg); }
+body[data-mood="happy"] .cat-tail { animation-duration: 1.2s; }
+
+/* ============================================================
+   Life progress: one paw per stage
+   ============================================================ */
+.life { display: flex; align-items: center; justify-content: space-between; gap: 1em; margin-bottom: 1.4em; }
+.paws { display: flex; gap: 6px; }
+.paws svg { width: 18px; height: 18px; fill: var(--muted); opacity: 0.3; }
+.paws svg.done { fill: var(--ink); opacity: 0.85; }
+.paws svg.now { fill: var(--accent); opacity: 1; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.25) rotate(-10deg); } }
+
+/* ============================================================
+   Bigger screens
+   ============================================================ */
+@media (min-width: 600px) {
+  .story { font-size: 1.25rem; }
+  .scene { width: 260px; height: 225px; }
+}
+
+/* People who asked their phone for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
