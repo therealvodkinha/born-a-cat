@@ -31,9 +31,23 @@ function coatStyle(c) {
 
 // A sitting cat. Its mood (awake, happy, sad, asleep) is set with
 // data-mood on the element around it, and changes the eyes.
+// What happened in its life shows too: data-marks on <body> lists the
+// marks (see MARKS in stories.js) and switches on the "acc" drawings,
+// data-cond (strong, ok, weak) changes how healthy it looks.
 const CAT_SVG = `
 <svg class="cat" viewBox="0 0 120 120" aria-hidden="true">
   <ellipse class="cat-shadow" cx="60" cy="109" rx="34" ry="4"/>
+  <g class="acc acc-sparkles">
+    <path d="M20 38 l2 -6 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 Z"/>
+    <path d="M100 56 l1.5 -4.5 l1.5 4.5 l4.5 1.5 l-4.5 1.5 l-1.5 4.5 l-1.5 -4.5 l-4.5 -1.5 Z"/>
+    <path d="M26 72 l1 -3 l1 3 l3 1 l-3 1 l-1 3 l-1 -3 l-3 -1 Z"/>
+  </g>
+  <g class="acc acc-kitten">
+    <ellipse class="body" cx="22" cy="102" rx="10" ry="6.5"/>
+    <path class="ear" d="M7 90 L8 81 L13 86 Z M15 86 L20 81 L20 90 Z"/>
+    <circle class="head" cx="14" cy="92" r="6.5"/>
+    <path class="line thin" d="M11 92 q1 1.2 2 0 M15 92 q1 1.2 2 0"/>
+  </g>
   <g class="cat-tail">
     <path class="ol" d="M80 104 C102 106 112 86 102 72 C98 66 93 67 95 72"/>
     <path class="fill-stroke" d="M80 104 C102 106 112 86 102 72 C98 66 93 67 95 72"/>
@@ -43,6 +57,10 @@ const CAT_SVG = `
   <path class="bib" d="M48 64 C52 84 64 84 68 64 C62 69 54 69 48 64 Z"/>
   <path class="stripes" d="M37 82 C42 81 45 83 47 86 M36 93 C41 92 44 94 46 97 M84 82 C79 81 76 83 74 86 M85 93 C80 92 77 94 75 97"/>
   <path class="line" d="M50 84 C49 95 49 102 50 107 M66 84 C67 95 67 102 66 107"/>
+  <g class="acc acc-bandage">
+    <rect x="41" y="95" width="13" height="7" rx="2"/>
+    <path d="M45 95 V102 M49 95 V102"/>
+  </g>
   <g class="cat-head">
     <path class="ear" d="M38 40 L40 13 L57 29 Z"/>
     <path class="ear" d="M61 28 L77 12 L79 40 Z"/>
@@ -63,7 +81,19 @@ const CAT_SVG = `
     <path class="nose" d="M56 51 L60 51 L58 53.6 Z"/>
     <path class="line thin" d="M58 53.6 Q56 56.6 53.8 55.4 M58 53.6 Q60 56.6 62.2 55.4"/>
     <path class="whiskers" d="M44 52 L30 49.5 M44 55 L30 57.5 M72 52 L86 49.5 M72 55 L86 57.5"/>
+    <path class="acc acc-scar" d="M70 33 L75 47 M69.4 37.6 l4 -1.4 M70.8 41.6 l4 -1.4"/>
+    <g class="acc acc-flour">
+      <ellipse cx="44" cy="34" rx="5" ry="3"/>
+      <ellipse cx="66" cy="57" rx="4" ry="2.4"/>
+      <ellipse cx="74" cy="22" rx="2.6" ry="2"/>
+    </g>
+    <path class="acc acc-crown" d="M47 29 L48.5 17 L53.5 23 L58 13 L62.5 23 L67.5 17 L69 29 Q58 26 47 29 Z"/>
   </g>
+  <g class="acc acc-collar">
+    <path class="band" d="M42 61 Q58 71 74 61"/>
+    <circle class="bell" cx="58" cy="69.5" r="3.2"/>
+  </g>
+  <path class="acc acc-heart" d="M94 34 C90 28 82 31 86 37 L94 44 L102 37 C106 31 98 28 94 34 Z"/>
 </svg>`;
 
 // Small paw print, used to show how far along the life is.

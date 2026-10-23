@@ -31,6 +31,12 @@
 //   If several special endings are possible, one is drawn at random.
 //   Endings with no condition are only used when no special ending fits.
 //
+// MARKS (below TRAITS) gives each mark a name, shown on screen as the cat's
+// state: what it has, what happened to it. "good" ones are shown in colour.
+//
+// After changing chances, events or endings, run:  node tools/odds.js
+// It plays 200,000 lives per city and updates odds.js (how rare each ending is).
+//
 // Rules: keep the quotes " " around each text, and the comma at the end of each line.
 // Inside a text, use ’ (curly apostrophe) and “ ” (curly quotes).
 //
@@ -46,6 +52,30 @@ const TRAITS = [
   { id: "curious", line: "You are curious. Every open door is an invitation. Every closed door is an insult." },
   { id: "clever", line: "You are clever. You know which humans are soft before they know it themselves." },
 ];
+
+// What each mark looks like on screen. "good: true" = something the cat won.
+const MARKS = {
+  baker: { label: "The baker’s cat", good: true },
+  gang: { label: "Respected", good: true },
+  scar: { label: "Battle scars" },
+  girl: { label: "Loved by a girl", good: true },
+  flour: { label: "Banned from the bakery" },
+  limp: { label: "Limping" },
+  kittens: { label: "Parent", good: true },
+  home: { label: "Has a home", good: true },
+  boss: { label: "King of the market", good: true },
+  left: { label: "Left behind" },
+  konbini: { label: "Night shift friend", good: true },
+  parklady: { label: "The park lady’s favourite", good: true },
+  forgotten: { label: "Forgotten" },
+};
+
+// How the cat feels, from how its life is going (more good than bad, or not).
+const CONDITIONS = {
+  strong: { label: "Strong and well fed", gained: "You feel strong. Your coat shines. Other cats move aside a little." },
+  ok: { label: "Getting by", gained: "" },
+  weak: { label: "Thin and sick", gained: "You are thin now. Your nose is warm and dry. You sleep more than you should." },
+};
 
 const STORIES = {
   // ==========================================================
@@ -202,7 +232,9 @@ const STORIES = {
             choices: [
               {
                 label: "Cross now",
-                chance: 0.5,
+                // Traffic is what kills most young street cats (median age 2.7 years
+                // for cats killed on the road, RVC study 2017), so this is a bad bet.
+                chance: 0.4,
                 bonus: { brave: 0.1, clever: 0.1 },
                 good: "Between the wheels, over the rails, and you arrive first. The best sardine is yours. The other cats arrive at a crime scene.",
                 bad: "The tram brushes your back leg. You make it, but you limp for weeks, and the sardine went to someone else anyway.",

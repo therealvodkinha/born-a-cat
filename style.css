@@ -139,6 +139,7 @@ h1 em { font-weight: 400; font-style: italic; color: var(--accent); }
 h2 { font-size: clamp(2.8rem, 14vw, 4rem); margin: 0.05em 0 0.3em; color: var(--accent); }
 
 #ending h2 {
+  overflow-wrap: anywhere;
   font-size: clamp(2rem, 9vw, 2.6rem);
   font-style: italic;
   font-weight: 600;
@@ -357,6 +358,205 @@ body[data-mood="asleep"] .cat-tail { animation-duration: 6s; }
 body[data-mood="asleep"] .cat-head { animation: none; transform: rotate(4deg); }
 body[data-mood="sad"] .cat-tail { animation: none; transform: rotate(14deg); }
 body[data-mood="happy"] .cat-tail { animation-duration: 1.2s; }
+
+/* ============================================================
+   What happened to the cat, drawn on it (see data-marks / data-cond)
+   ============================================================ */
+.cat .acc { display: none; }
+body[data-marks~="boss"] .cat .acc-crown,
+body[data-marks~="scar"] .cat .acc-scar,
+body[data-marks~="flour"] .cat .acc-flour,
+body[data-marks~="home"] .cat .acc-collar,
+body[data-marks~="limp"] .cat .acc-bandage,
+body[data-marks~="kittens"] .cat .acc-kitten,
+body[data-marks~="baker"] .cat .acc-heart,
+body[data-marks~="girl"] .cat .acc-heart,
+body[data-marks~="parklady"] .cat .acc-heart,
+body[data-marks~="konbini"] .cat .acc-heart,
+body[data-cond="strong"] .cat .acc-sparkles { display: inline; }
+
+.cat .acc { transform-box: fill-box; transform-origin: center; animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes pop { from { opacity: 0; transform: scale(0.2); } }
+
+.cat .acc-crown { fill: #f0bf3c; stroke: var(--cat-line); stroke-width: 1.8; stroke-linejoin: round; }
+.cat .acc-scar { fill: none; stroke: #c9524f; stroke-width: 1.6; stroke-linecap: round; }
+.cat .acc-flour { fill: #fffdf6; opacity: 0.9; }
+.cat .acc-collar .band { fill: none; stroke: #c4302b; stroke-width: 4.2; stroke-linecap: round; }
+.cat .acc-collar .bell { fill: #f0bf3c; stroke: var(--cat-line); stroke-width: 1.2; }
+.cat .acc-bandage rect { fill: #fffdf6; stroke: var(--cat-line); stroke-width: 1.4; }
+.cat .acc-bandage path { stroke: #d9cfbf; stroke-width: 1; }
+.cat .acc-heart { fill: #e0565b; stroke: var(--cat-line); stroke-width: 1.4; }
+.cat .acc-sparkles { fill: #f0bf3c; }
+.cat .acc-kitten .body, .cat .acc-kitten .head, .cat .acc-kitten .ear { stroke-width: 1.8; }
+
+body[data-marks~="baker"] .cat .acc-heart,
+body[data-marks~="girl"] .cat .acc-heart,
+body[data-marks~="parklady"] .cat .acc-heart,
+body[data-marks~="konbini"] .cat .acc-heart { animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both, float 2.6s 0.6s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-4px) rotate(6deg); } }
+body[data-cond="strong"] .cat .acc-sparkles path { transform-box: fill-box; transform-origin: center; animation: twinkle 1.8s ease-in-out infinite; }
+body[data-cond="strong"] .cat .acc-sparkles path:nth-child(2) { animation-delay: 0.6s; }
+body[data-cond="strong"] .cat .acc-sparkles path:nth-child(3) { animation-delay: 1.2s; }
+@keyframes twinkle { 50% { transform: scale(0.3) rotate(45deg); opacity: 0.4; } }
+
+/* a weak cat is thinner and greyer */
+.cat > .body { transform-origin: 60px 108px; transition: transform 0.6s ease; }
+body[data-cond="weak"] .cat { filter: saturate(0.35) brightness(0.96); }
+body[data-cond="weak"] .cat > .body { transform: scaleX(0.88); }
+body[data-cond="strong"] .cat > .body { transform: scaleX(1.06); }
+
+/* The cat's state, as little stamps: what it has, what happened to it. */
+.status { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 1.3em; }
+.status:empty { display: none; }
+.pill {
+  font-family: var(--title);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25em 0.7em;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+}
+.pill.good { border-color: var(--accent); color: var(--accent); }
+.pill.bad { border-style: dashed; color: var(--muted); border-color: var(--muted); }
+.pill.cond-strong { background: #f0bf3c; color: #2a211c; border-color: #2a211c; }
+.pill.cond-weak { background: transparent; color: var(--muted); border-color: var(--muted); border-style: dashed; }
+
+/* After a choice: what the cat just won or lost, stamped in. */
+.gains { display: flex; flex-direction: column; align-items: center; gap: 0.5em; }
+.gains:empty { display: none; }
+.gain {
+  font-family: var(--title);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.35em 1em;
+  border: 2px solid currentColor;
+  border-radius: 4px 9px 5px 10px;
+  rotate: -2deg;
+  animation: stamp 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.gain.good { color: var(--accent); }
+.gain.bad { color: var(--muted); border-style: dashed; }
+.gain:nth-child(2) { animation-delay: 0.15s; rotate: 1.5deg; }
+.gain-line { font-style: italic; color: var(--muted); max-width: 30ch; margin: 0.2em 0 0; animation: enter 0.5s 0.3s both; }
+.waiting .gain, .waiting .gain-line { animation: none; }
+@keyframes stamp { from { opacity: 0; transform: scale(2.2); } }
+
+/* ============================================================
+   The ending card. Made to be shared later, so it is one block.
+   ============================================================ */
+.end-card {
+  position: relative;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 6px 14px 8px 16px;
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 1.4em 1.3em 1.2em;
+  overflow: hidden;
+}
+.end-card .scene.small { margin-top: 0.4em; }
+.end-card .story { font-size: 1.05rem; }
+
+.rarity {
+  display: inline-block;
+  font-family: var(--title);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.odds { font-family: var(--title); font-size: 0.95rem; color: var(--muted); margin: -0.3em 0 1em; }
+.odds strong { color: var(--ink); }
+
+.after-text { animation: enter 0.6s both; }
+.waiting .after-text { visibility: hidden; animation: none; }
+.end-card .status { margin: 1.2em 0 0; }
+
+.fact {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--muted);
+  border-top: 1.5px dashed var(--muted);
+  margin: 1.2em 0 0;
+  padding-top: 0.9em;
+}
+.fact b { font-family: var(--title); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.72rem; color: var(--ink); }
+.fact a { color: inherit; }
+
+.found { font-family: var(--title); font-size: 0.9rem; color: var(--muted); margin: 1.2em 0 0; }
+.found .new { color: var(--accent); font-weight: 700; }
+
+/* Rare endings: gold, shining, and impossible to miss. */
+.end-card[data-rarity="rare"],
+.end-card[data-rarity="legendary"] {
+  --gold: #f0bf3c;
+  border: 3px solid #2a211c;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 236, 170, 0.75), transparent 60%),
+    var(--card);
+  box-shadow: 0 0 0 5px var(--gold), 6px 6px 0 5px #2a211c, 0 0 40px rgba(240, 191, 60, 0.55);
+  margin: 6px;
+}
+.end-card[data-rarity="rare"] .rarity,
+.end-card[data-rarity="legendary"] .rarity {
+  font-size: 0.95rem;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  color: #2a211c;
+  background: var(--gold);
+  border: 2px solid #2a211c;
+  padding: 0.35em 1em;
+  rotate: -3deg;
+  box-shadow: 3px 3px 0 #2a211c;
+  animation: stamp 0.5s 0.2s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.end-card[data-rarity="rare"] .odds,
+.end-card[data-rarity="legendary"] .odds { font-size: 1.15rem; color: var(--ink); }
+.end-card[data-rarity="rare"] .odds strong,
+.end-card[data-rarity="legendary"] .odds strong { color: var(--accent); font-size: 1.3em; }
+body[data-city="Tokyo"] .end-card[data-rarity="rare"],
+body[data-city="Tokyo"] .end-card[data-rarity="legendary"] {
+  background: radial-gradient(circle at 50% 22%, rgba(240, 191, 60, 0.35), transparent 60%), var(--card);
+}
+
+/* a band of light that sweeps across the card */
+.end-card[data-rarity="rare"]::after,
+.end-card[data-rarity="legendary"]::after {
+  content: "";
+  position: absolute;
+  inset: -50% -100%;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.55) 50%, transparent 58%);
+  pointer-events: none;
+  animation: sweep 3.2s 0.6s ease-in-out infinite;
+}
+@keyframes sweep { from { transform: translateX(-45%); } 60%, to { transform: translateX(45%); } }
+
+/* legendary: the gold border itself shimmers in colours */
+.end-card[data-rarity="legendary"] {
+  box-shadow: 0 0 0 5px var(--gold), 6px 6px 0 5px #2a211c, 0 0 60px rgba(240, 120, 60, 0.6);
+  animation: glow 2.4s ease-in-out infinite;
+}
+@keyframes glow {
+  50% { box-shadow: 0 0 0 5px #f58a4b, 6px 6px 0 5px #2a211c, 0 0 80px rgba(120, 160, 255, 0.6); }
+}
+.end-card[data-rarity="legendary"] h2 { color: var(--accent); }
+
+/* falling sparkles around a rare card */
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+.confetti i {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 9px;
+  background: #f0bf3c;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: fall linear both;
+}
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
 
 /* ============================================================
    Life progress: one paw per stage

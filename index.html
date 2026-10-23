@@ -45,6 +45,7 @@
       <p class="label" id="event-count"></p>
       <div class="paws" id="paws"></div>
     </header>
+    <div class="status" id="status"></div>
     <p class="story" id="event-text"></p>
     <div class="choices" id="choices"></div>
   </main>
@@ -53,24 +54,37 @@
     <div class="mini-cat cat-slot"></div>
     <p class="story" id="result-text"></p>
     <div class="actions">
+      <div class="gains" id="gains"></div>
       <button id="next-btn" type="button">Continue</button>
     </div>
   </main>
 
   <main class="screen hidden" id="ending">
-    <div class="scene small">
-      <div class="disc"></div>
-      <div class="cat-slot"></div>
-    </div>
-    <h2 id="ending-title"></h2>
-    <p class="story" id="ending-text"></p>
+    <article class="end-card" id="end-card">
+      <p class="rarity" id="rarity"></p>
+      <div class="scene small">
+        <div class="disc"></div>
+        <div class="cat-slot"></div>
+      </div>
+      <p class="label" id="end-city"></p>
+      <h2 id="ending-title"></h2>
+      <p class="odds" id="odds"></p>
+      <p class="story" id="ending-text"></p>
+      <div class="status after-text" id="end-status"></div>
+      <p class="fact after-text" id="fact"></p>
+    </article>
+    <p class="found after-text" id="found"></p>
     <div class="actions">
       <button id="restart-btn" type="button">Be born again</button>
     </div>
   </main>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
 
   <script src="art.js"></script>
   <script src="stories.js"></script>
+  <script src="facts.js"></script>
+  <script src="odds.js"></script>
+  <script src="rules.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
