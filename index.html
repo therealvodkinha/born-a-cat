@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Born a Cat</title>
+  <meta name="description" content="You are born as a cat, somewhere in the world. A short game about chance.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="screen" id="home">
+    <p class="paw" aria-hidden="true">🐾</p>
+    <h1>Born a Cat</h1>
+    <p class="tagline">Somewhere in the world, a kitten opens its eyes.<br>It could be you.</p>
+    <button id="born-btn" type="button">Be born</button>
+  </main>
+
+  <main class="screen hidden" id="birth">
+    <p class="small">You were born in</p>
+    <h2 id="city-name"></h2>
+    <p id="city-line" class="tagline"></p>
+    <button id="again-btn" type="button" class="secondary">Be born again</button>
+    <p class="small muted">The story starts here soon.</p>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
