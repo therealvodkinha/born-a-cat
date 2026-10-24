@@ -1,9 +1,8 @@
 // Sounds and music.
-// Real recordings go in the sounds/ folder and are listed in FILES below.
-// A sound with a file uses the file (one of them at random if there are
-// several). A sound without a file is made in the browser (Web Audio API),
-// except the meow and the music: made-up ones sounded wrong, so without a
-// file they stay silent.
+// Real recordings live in the sounds/ folder (see sounds/CREDITS.md) and are
+// listed in FILES and MUSIC below. A sound with a file uses the file (one of
+// them at random if there are several). A sound without a file is made in the
+// browser (Web Audio API).
 //
 //   SOUND.play("meow")   plays one sound (see SFX below)
 //   SOUND.music("Rabat") starts the background music of a city
@@ -24,13 +23,13 @@ const SOUND = (() => {
   // Recordings. Paths are relative to index.html. Leave a list empty to
   // use the made-up sound instead.
   const FILES = {
-    meow: [],
-    purr: [],
+    meow: ["sounds/meow-1.mp3", "sounds/meow-2.mp3", "sounds/meow-3.mp3"],
+    purr: ["sounds/purr.mp3"],
     hiss: [],
   };
   const MUSIC = {
-    Rabat: "",
-    Tokyo: "",
+    Rabat: "sounds/music-rabat.mp3",
+    Tokyo: "sounds/music-tokyo.mp3",
   };
 
   let size = 1; // how big the cat is (0.5 = newborn, 1 = adult): small cats meow higher
