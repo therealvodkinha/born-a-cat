@@ -14,7 +14,7 @@ All from [Pixabay](https://pixabay.com), free to use under the Pixabay Content L
 | kitten-1/2/3.mp3 | Kitten Sound 2 (354217), three mews cut out | FeedTheStrayCats |
 | hiss.mp3 | Hiss 3 (103123) | freesound_community |
 | bark.mp3 | Free Dog Bark (419014) | Dragon Studio |
-| city-rabat.mp3 | Seagull City (372653) | SoundReality |
-| city-tokyo.mp3 | Japanese Cicada (103659), cut to 5 s | freesound_community |
+| city-rabat-1/2.mp3 | Seagull City (372653), two short cuts | SoundReality |
+| city-tokyo.mp3 | Japanese Cicada (103659), cut to 2.5 s | freesound_community |
 
 Volumes were evened out, and everything re-encoded at 128 kbps.

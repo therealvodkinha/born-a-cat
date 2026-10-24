@@ -269,7 +269,7 @@ function startStep() {
   show("time");
   SOUND.mood("day");
   SOUND.play("steps", 0.1);
-  SOUND.play("city-" + life.city, 0.3);
+  if (Math.random() < 0.5) SOUND.play("city-" + life.city, 0.3);
   if (newChapter) SOUND.play("chapter", calm ? 0.6 : 2.6);
 
   const walk = calm ? 600 : 2600;
@@ -528,6 +528,7 @@ function choose(choice, skill) {
   // what you hear: the outcome, then the cat itself
   if (change.health <= -20) SOUND.play("hit");
   else SOUND.play(wentWell ? "good" : "bad");
+  if (/\bdogs?\b/i.test(text)) SOUND.play("bark", 0.2);
   if (/hiss/i.test(choice.label)) SOUND.play("hiss", 0.25);
   else if (change.happy >= 10) SOUND.play("purr", 0.4);
   else if (wentWell && Math.random() < 0.35) SOUND.play("meow", 0.4);
