@@ -163,6 +163,11 @@ h2 { font-size: clamp(2.8rem, 14vw, 4rem); margin: 0.05em 0 0.3em; color: var(--
 .tagline { font-size: 1.12rem; line-height: 1.55; margin: 0.5em auto; max-width: 30ch; }
 .trait { font-style: italic; color: var(--muted); }
 
+/* The cat's name, given at birth (see names.js). */
+.cat-name { font-family: var(--title); font-size: 1.35rem; margin: 1em 0 0; animation: enter 0.6s 0.8s both; }
+.cat-name strong { color: var(--accent); font-size: 1.25em; font-weight: 700; }
+.cat-name + .trait { margin-top: 0.2em; }
+
 .label {
   font-family: var(--title);
   font-size: 0.8rem;
@@ -502,6 +507,8 @@ body[data-cond="weak"] .cat { filter: saturate(0.35) brightness(0.96); }
 
 .found { font-family: var(--title); font-size: 0.9rem; color: var(--muted); margin: 1.2em 0 0; }
 .found .new { color: var(--accent); font-weight: 700; }
+.share-note { font-size: 0.9rem; font-style: italic; color: var(--muted); margin: -0.2em 0 0; min-height: 1.2em; max-width: 30ch; }
+.share-note:empty { display: none; }
 
 /* Rare endings: gold, shining, and impossible to miss. */
 .end-card[data-rarity="rare"],
@@ -642,6 +649,7 @@ body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
 .g-delta.up { color: var(--good); }
 .g-delta.down { color: #c9524f; }
 @keyframes float-up { 0% { opacity: 0; transform: translateY(8px) scale(0.6); } 20% { opacity: 1; transform: none scale(1.25); } 35% { transform: scale(1); } 100% { opacity: 1; } }
+.card-name { font-family: var(--title); font-size: 1rem; font-weight: 700; text-align: left; margin: 0 0 1px; }
 .g-body { font-family: var(--title); font-size: 0.82rem; color: var(--muted); text-align: left; margin: 2px 0 0; }
 .g-body .kg-delta { margin-left: 0.5em; }
 
