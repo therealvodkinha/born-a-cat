@@ -4,8 +4,9 @@
 // them at random if there are several). A sound without a file is made in the
 // browser (Web Audio API).
 //
-//   SOUND.play("meow")   plays one sound (see SFX below)
+//   SOUND.play("meow")   plays one sound (see FILES and SFX below)
 //   SOUND.music("Rabat") starts the background music of a city
+//                        ("farewell" for the end of a life)
 //   SOUND.mood("night")  slows the music down ("day" brings it back)
 //   SOUND.toggle()       mutes or unmutes; the choice is remembered
 //
@@ -24,15 +25,22 @@ const SOUND = (() => {
   // use the made-up sound instead.
   const FILES = {
     meow: ["sounds/meow-1.mp3", "sounds/meow-2.mp3", "sounds/meow-3.mp3"],
+    kitten: ["sounds/kitten-1.mp3", "sounds/kitten-2.mp3", "sounds/kitten-3.mp3"], // a "meow" while small
     purr: ["sounds/purr.mp3"],
-    hiss: [],
+    hiss: ["sounds/hiss.mp3"],
+    bark: ["sounds/bark.mp3"],
+    // the sound of the city, while the cat walks
+    "city-Rabat": ["sounds/city-rabat.mp3"], // seagulls
+    "city-Tokyo": ["sounds/city-tokyo.mp3"], // cicadas
   };
   const MUSIC = {
     Rabat: "sounds/music-rabat.mp3",
     Tokyo: "sounds/music-tokyo.mp3",
+    farewell: "sounds/music-farewell.mp3",
   };
 
   let size = 1; // how big the cat is (0.5 = newborn, 1 = adult): small cats meow higher
+  let kitten = false; // a kitten mews instead of meowing
 
   function init() {
     if (ctx) return ctx.state === "suspended" ? ctx.resume() : null;
@@ -192,13 +200,6 @@ const SOUND = (() => {
       o.stop(t + 0.15);
     },
 
-    // the end of a life: one low, long bell
-    farewell(t) {
-      tone(262, t, 3.5, "sine", 0.18);
-      tone(392, t + 0.02, 3, "sine", 0.08);
-      tone(524, t + 0.04, 2.5, "sine", 0.04);
-    },
-
     // a rare ending: a bright run of notes
     rare(t) {
       [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, t + i * 0.08, 0.6, "triangle", 0.09));
@@ -221,6 +222,7 @@ const SOUND = (() => {
     if (muted) return;
     init();
     if (!ctx) return;
+    if (name === "meow" && kitten && FILES.kitten.length) name = "kitten";
     const files = FILES[name] || [];
     if (files.length) {
       const path = files[Math.floor(Math.random() * files.length)];
@@ -246,15 +248,26 @@ const SOUND = (() => {
   track.loop = true;
   let level = 0.35;
 
-  function music(city) {
-    const path = MUSIC[city];
-    if (!path) {
-      track.pause();
+  // Changing track fades the old one out first.
+  let fade = null;
+  function music(name) {
+    const path = MUSIC[name];
+    clearInterval(fade);
+    if (track.src.endsWith(path || "\0")) {
+      track.volume = muted ? 0 : level;
+      track.play().catch(() => {});
       return;
     }
-    if (!track.src.endsWith(path)) track.src = path;
-    track.volume = muted ? 0 : level;
-    track.play().catch(() => {});
+    fade = setInterval(() => {
+      track.volume = Math.max(0, track.volume - 0.05);
+      if (track.volume > 0 && !track.paused) return;
+      clearInterval(fade);
+      track.pause();
+      if (!path) return;
+      track.src = path;
+      track.volume = muted ? 0 : level;
+      track.play().catch(() => {});
+    }, 60);
   }
 
   // "night": quieter, for the end of a life
@@ -285,6 +298,9 @@ const SOUND = (() => {
     },
     set size(v) {
       size = v;
+    },
+    set kitten(v) {
+      kitten = v;
     },
   };
 })();
