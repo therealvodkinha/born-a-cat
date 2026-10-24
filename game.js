@@ -6,9 +6,10 @@
 const screens = {
   home: document.getElementById("home"),
   birth: document.getElementById("birth"),
-  chapter: document.getElementById("chapter"),
+  time: document.getElementById("time"),
   event: document.getElementById("event"),
   result: document.getElementById("result"),
+  farewell: document.getElementById("farewell"),
   ending: document.getElementById("ending"),
 };
 
@@ -31,6 +32,8 @@ function setLook(key, value) {
 function showState() {
   setLook("marks", [...life.marks].join(" "));
   setLook("cond", conditionOf(life));
+  const chapter = stepOf(life).chapterIndex;
+  setLook("age", chapter <= 1 ? "kitten" : chapter === LIFE.length - 1 ? "old" : "adult");
   // the drawing grows with the cat, and gets fatter or thinner with food
   const size = 0.45 + 0.55 * Math.min(1.1, sizeOf(life) / 46);
   document.body.style.setProperty("--size", size.toFixed(3));
@@ -212,6 +215,7 @@ function beBorn() {
   showState();
   document.getElementById("horizon").innerHTML = SKYLINES[life.city] || "";
   document.getElementById("scene-city").innerHTML = SKYLINES[life.city] || "";
+  document.getElementById("road-city").innerHTML = SKYLINES[life.city] || "";
   document.getElementById("confetti").replaceChildren();
 
   // the name of the city falls in letter by letter
@@ -234,25 +238,47 @@ function beBorn() {
   show("birth");
 }
 
-// A new step: the cat grows. A new chapter of life gets its own title card.
+// A new step: the cat grows, and walks across the screen while its age
+// changes. At the start of a new chapter of life, the walk is followed by a
+// true fact, and the player goes on when ready. Otherwise it goes on alone.
 function startStep() {
   const step = stepOf(life);
-  const firstOfChapter = life.step === 0 || STEPS[life.step - 1].chapter !== step.chapter;
+  const prev = life.step === 0 ? null : STEPS[life.step - 1];
+  const newChapter = !prev || prev.chapter !== step.chapter;
   beginStep(life);
   showState();
-  if (!firstOfChapter) return showEvent();
-
-  document.getElementById("chapter-name").textContent = step.chapter.name;
-  document.getElementById("chapter-age").textContent = step.age;
   setLook("mood", "awake");
   setLook("tone", null);
-  show("chapter");
+
+  const screen = screens.time;
+  const age = document.getElementById("time-age");
+  document.getElementById("time-chapter").textContent = newChapter ? step.chapter.name : "";
+  age.textContent = prev ? prev.age : "Born";
+  age.className = "";
+  const fact = newChapter ? freshFact([], CITY_FACTS[life.city]) : null;
+  document.getElementById("time-fact").innerHTML = fact
+    ? `<b>Did you know?</b><br>${fact.text}<br><a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
+    : "";
+  document.querySelector("#time .walker").innerHTML = WALK_SVG; // restarts the walk
+  screen.classList.add("waiting");
+  show("time");
+
+  const walk = calm ? 600 : 2600;
   clearTimeout(startStep.timer);
-  startStep.timer = setTimeout(showEvent, calm ? 1200 : 1900);
+  clearTimeout(startStep.swap);
+  startStep.swap = setTimeout(() => {
+    age.textContent = step.age;
+    age.className = "new-age";
+  }, walk * 0.5);
+  startStep.timer = setTimeout(() => {
+    screen.classList.remove("waiting");
+    if (!newChapter) showEvent();
+  }, walk);
 }
 
 function showEvent() {
   clearTimeout(startStep.timer);
+  clearTimeout(startStep.swap);
   const step = stepOf(life);
   const event = drawEvent(life);
 
@@ -452,6 +478,7 @@ function choose(choice, skill) {
   document.getElementById("gains").innerHTML = gains.join("");
 
   const fact = FACTS[showEvent.event.fact];
+  if (fact) markFactSeen(showEvent.event.fact);
   document.getElementById("event-fact").innerHTML = fact
     ? `<b>True story</b> ${fact.text} <a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
     : "";
@@ -473,7 +500,36 @@ function choose(choice, skill) {
 
 function next() {
   if (endStep(life)) startStep();
-  else showEnding();
+  else showFarewell();
+}
+
+// Before the ending card: a quiet moment. The screen goes dark, the cat
+// curls up and falls asleep, a few words appear one by one.
+const FAREWELLS = {
+  early: ["You are so small, and so tired.", "Your mother curls around you. It’s warm. Her heartbeat is the last thing you hear."],
+  cut: ["You are very tired.", "You find a quiet spot, out of the wind. You curl up. You purr a little, just for yourself."],
+  age: ["You are old now, and the sun is warm.", "You curl up in your favourite spot. Your breathing slows down. You are not afraid."],
+  ancient: ["You have seen everything a cat can see.", "You curl up one last time, slowly, as if you had all the time in the world. You do."],
+};
+
+function showFarewell() {
+  const result = drawEnding(life);
+  showFarewell.result = result;
+  const step = stepOf(life);
+  const kind =
+    life.death === "hurt" ? (step.chapterIndex <= 1 ? "early" : "cut") : life.step === STEPS.length - 1 ? "ancient" : "age";
+  const [one, two] = FAREWELLS[kind];
+  document.getElementById("farewell-1").textContent = one;
+  document.getElementById("farewell-2").textContent = two;
+  document.getElementById("farewell-3").textContent = `${life.name} · ${ageAtDeath(life)}`;
+
+  setLook("mood", "asleep");
+  setLook("tone", "night");
+  const screen = screens.farewell;
+  screen.classList.add("waiting");
+  show("farewell");
+  clearTimeout(showFarewell.timer);
+  showFarewell.timer = setTimeout(() => screen.classList.remove("waiting"), calm ? 300 : 4200);
 }
 
 // ------------------------------------------------------------
@@ -496,8 +552,7 @@ function rememberEnding(title) {
 }
 
 function factFor(ending) {
-  const key = ending.fact || ENDING_FACTS[ending.title] || pick(CITY_FACTS[life.city] || Object.keys(FACTS));
-  return FACTS[key];
+  return freshFact([ending.fact || ENDING_FACTS[ending.title]], CITY_FACTS[life.city]);
 }
 
 function oddsLine(odds) {
@@ -522,7 +577,8 @@ function throwConfetti(count) {
 }
 
 function showEnding() {
-  const { ending, luck } = drawEnding(life);
+  clearTimeout(showFarewell.timer);
+  const { ending, luck } = showFarewell.result;
   const odds = (ODDS[life.city] || {})[ending.title];
   const rarity = odds ? rarityOf(odds) : "common";
   const found = rememberEnding(ending.title);
@@ -575,7 +631,8 @@ document.body.style.cssText = coatStyle(COATS[0]);
 document.getElementById("born-btn").addEventListener("click", beBorn);
 document.getElementById("again-btn").addEventListener("click", beBorn);
 document.getElementById("start-btn").addEventListener("click", startStep);
-document.getElementById("chapter").addEventListener("click", showEvent);
+document.getElementById("time-btn").addEventListener("click", showEvent);
+document.getElementById("farewell-btn").addEventListener("click", showEnding);
 document.getElementById("next-btn").addEventListener("click", next);
 document.getElementById("restart-btn").addEventListener("click", beBorn);
 document.getElementById("share-btn").addEventListener("click", async (e) => {

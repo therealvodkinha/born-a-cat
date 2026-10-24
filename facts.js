@@ -1,8 +1,12 @@
 // Real facts about cats, with their source, so anyone can check them.
-// Shown in small under an outcome when its event has "fact" (stories.js),
-// and on the ending card: an ending shows its own fact if it has one
-// ("fact" in the ending, or ENDING_FACTS by title), otherwise a random fact
-// of its city, otherwise a random general fact.
+// Shown:
+//  - under an outcome, when its event has "fact" (stories.js)
+//  - on each chapter card ("Did you know?"), a fact the player hasn't seen yet
+//  - on the ending card: the ending's own fact ("fact" in the ending, or
+//    ENDING_FACTS by title) if not seen yet, otherwise a new one from the city
+//    or from all facts.
+// The game remembers which facts the player has seen (in this browser), so
+// the same ones don't keep coming back. Add facts freely: more is better.
 
 const FACTS = {
   streetKittens: {
@@ -100,10 +104,146 @@ const FACTS = {
     source: "Guinness World Records",
     url: "https://guinnessworldrecords.com/world-records/oldest-cat-ever",
   },
+  pacing: {
+    text: "Cats walk by moving both legs on one side, then both on the other. Most mammals don’t walk like that. Camels and giraffes do.",
+    source: "Wikipedia, Cat",
+    url: "https://en.wikipedia.org/wiki/Cat",
+  },
+  sleepHours: {
+    text: "Cats sleep 12 to 16 hours a day. 13 to 14 hours on average.",
+    source: "Wikipedia, Cat",
+    url: "https://en.wikipedia.org/wiki/Cat",
+  },
+  hearing: {
+    text: "Cats hear sounds up to 79 kHz. Humans stop at about 20. A mouse squeaking in the wall is loud to a cat.",
+    source: "Wikipedia, Cat",
+    url: "https://en.wikipedia.org/wiki/Cat",
+  },
+  nightVision: {
+    text: "Cats can see with one sixth of the light humans need. A mirror layer behind their eyes gives the light a second chance. That’s why their eyes shine at night.",
+    source: "Wikipedia, Cat",
+    url: "https://en.wikipedia.org/wiki/Cat",
+  },
+  collarbone: {
+    text: "A cat’s collarbones float free, attached to no other bone. It helps them squeeze through gaps and land softly.",
+    source: "Wikipedia, Cat",
+    url: "https://en.wikipedia.org/wiki/Cat",
+  },
+  origin: {
+    text: "Every pet cat descends from the African wildcat. The oldest known cat buried with a human was found in Cyprus. It is about 9,500 years old.",
+    source: "Wikipedia, Cat",
+    url: "https://en.wikipedia.org/wiki/Cat",
+  },
+  meowHumans: {
+    text: "Adult cats rarely meow to each other. The meow is mostly for humans. It’s probably a kitten habit they kept for us.",
+    source: "Wikipedia, Cat communication",
+    url: "https://en.wikipedia.org/wiki/Cat_communication",
+  },
+  tailUp: {
+    text: "A tail held straight up, quivering a little, is a cat’s happiest hello.",
+    source: "Wikipedia, Cat communication",
+    url: "https://en.wikipedia.org/wiki/Cat_communication",
+  },
+  kneading: {
+    text: "Kneading starts with kittens pressing their mother’s belly for milk. Adult cats keep doing it on soft things, often just before sleeping.",
+    source: "Wikipedia, Cat communication",
+    url: "https://en.wikipedia.org/wiki/Cat_communication",
+  },
+  chatter: {
+    text: "Cats chatter and chirp at birds they can’t reach. The sound may imitate their prey.",
+    source: "Wikipedia, Cat communication",
+    url: "https://en.wikipedia.org/wiki/Cat_communication",
+  },
+  flehmen: {
+    text: "When a cat sniffs with its mouth half open, it’s using a second nose: an organ in the roof of its mouth that reads the smells other cats leave.",
+    source: "Wikipedia, Flehmen response",
+    url: "https://en.wikipedia.org/wiki/Flehmen_response",
+  },
+  kittenEyes: {
+    text: "Kittens are born with their eyes closed. They open them 7 to 10 days later.",
+    source: "Wikipedia, Kitten",
+    url: "https://en.wikipedia.org/wiki/Kitten",
+  },
+  litters: {
+    text: "A mother cat usually has 2 to 5 kittens at once. Litters of more than ten have been seen.",
+    source: "Wikipedia, Kitten",
+    url: "https://en.wikipedia.org/wiki/Kitten",
+  },
+  egypt: {
+    text: "In ancient Egypt, killing a cat was a serious crime. Around 60 BC, a crowd killed a Roman who had killed one, even though the king tried to stop them.",
+    source: "Wikipedia, Cats in ancient Egypt",
+    url: "https://en.wikipedia.org/wiki/Cats_in_ancient_Egypt",
+  },
+  mummies: {
+    text: "In the 1880s, more than 200,000 mummified animals were found in a single Egyptian cemetery, at Beni Hasan. Most of them were cats.",
+    source: "Wikipedia, Cats in ancient Egypt",
+    url: "https://en.wikipedia.org/wiki/Cats_in_ancient_Egypt",
+  },
+  felicette: {
+    text: "In 1963, a Paris street cat named Félicette flew to space. She went about 150 km up, for 13 minutes, and came back alive.",
+    source: "Wikipedia, Félicette",
+    url: "https://en.wikipedia.org/wiki/F%C3%A9licette",
+  },
+  tama: {
+    text: "From 2007, a cat named Tama was stationmaster of Kishi station, in Japan. Passengers went up 17% in her first month. She had a Shinto funeral.",
+    source: "Wikipedia, Tama (cat)",
+    url: "https://en.wikipedia.org/wiki/Tama_(cat)",
+  },
+  tashirojima: {
+    text: "On Tashirojima, a small Japanese island, cats outnumber people. In the middle of the island, there is a shrine to a cat.",
+    source: "Wikipedia, Tashirojima",
+    url: "https://en.wikipedia.org/wiki/Tashirojima",
+  },
+  maneki: {
+    text: "A maneki-neko with its left paw up is said to call customers. The right paw calls money. To a Japanese eye, it’s beckoning, not waving.",
+    source: "Wikipedia, Maneki-neko",
+    url: "https://en.wikipedia.org/wiki/Maneki-neko",
+  },
+  stubbs: {
+    text: "A cat named Stubbs was honorary mayor of Talkeetna, in Alaska, for 20 years.",
+    source: "Wikipedia, Stubbs (cat)",
+    url: "https://en.wikipedia.org/wiki/Stubbs_(cat)",
+  },
+  larry: {
+    text: "Larry has been Chief Mouser at 10 Downing Street, in London, since 2011. Prime ministers come and go. Larry stays.",
+    source: "Wikipedia, Larry (cat)",
+    url: "https://en.wikipedia.org/wiki/Larry_(cat)",
+  },
+  hemingway: {
+    text: "Hemingway’s house in Key West is home to about 50 descendants of his cats. About half have extra toes. The record for one cat is 29 toes.",
+    source: "Wikipedia, Polydactyl cat",
+    url: "https://en.wikipedia.org/wiki/Polydactyl_cat",
+  },
+  muezza: {
+    text: "A story says the Prophet cut off his sleeve rather than wake his cat, Muezza, asleep on it. Historians doubt it. People still love telling it.",
+    source: "Wikipedia, Muezza",
+    url: "https://en.wikipedia.org/wiki/Muezza",
+  },
+  boxes: {
+    text: "Shelter cats given a box to hide in got used to their new place faster, and were less stressed, than cats without one.",
+    source: "Vinke et al., Utrecht University, 2014",
+    url: "https://dspace.library.uu.nl/handle/1874/377363",
+  },
+  illusion: {
+    text: "Cats will sit inside a square that isn’t there. Four corner shapes drawn on the floor are enough.",
+    source: "Smith et al., Applied Animal Behaviour Science 2021",
+    url: "https://www.smithsonianmag.com/smart-news/if-i-fits-i-sits-experiment-shows-felines-also-sit-illusory-boxes-180977681",
+  },
+  tongue: {
+    text: "A cat’s tongue is covered in tiny hollow hooks. They scoop up saliva and push it deep into the fur, right down to the skin.",
+    source: "Noel & Hu, Georgia Tech, PNAS 2018",
+    url: "https://www.npr.org/2018/11/21/669294706/freaked-out-by-your-cats-scratchy-tongue-don-t-be-it-s-keeping-them-cleaner",
+  },
+  paws: {
+    text: "Cats have a favourite paw. Most females are right-pawed. Most males are left-pawed.",
+    source: "Wells et al., Queen’s University Belfast",
+    url: "https://www.livescience.com/61517-cat-paw-dominance-study.html",
+  },
 };
 
 const ENDING_FACTS = {
-  "Gone without a trace": "roads",
+  "Asleep in the shade": "streetLife",
+  "A rice ball on the bench": "streetLife",
   "A cat with a home": "streetLife",
   "A small, warm apartment": "japanIndoor",
   "The old king of the market": "territory",
@@ -118,6 +258,43 @@ const ENDING_FACTS = {
 };
 
 const CITY_FACTS = {
-  Rabat: ["streetLife", "females", "territory"],
-  Tokyo: ["japanShelters", "japanIndoor", "females"],
+  Rabat: ["streetLife", "females", "territory", "islam", "muezza", "egypt", "mummies", "origin"],
+  Tokyo: ["japanShelters", "japanIndoor", "females", "tama", "tashirojima", "maneki", "gotokuji", "names", "voices"],
 };
+
+// Facts the player has already seen, kept in this browser only.
+const seenFacts = new Set(
+  (() => {
+    try {
+      return JSON.parse(localStorage.getItem("born-a-cat:facts")) || [];
+    } catch (e) {
+      return [];
+    }
+  })()
+);
+
+function markFactSeen(key) {
+  seenFacts.add(key);
+  try {
+    localStorage.setItem("born-a-cat:facts", JSON.stringify([...seenFacts]));
+  } catch (e) {}
+}
+
+// A fact the player hasn't seen yet: the first key in "wanted" that is new,
+// otherwise a new one from "pool", otherwise from all facts. Once every
+// fact has been seen, they all become new again.
+function freshFact(wanted = [], pool = []) {
+  const unseen = (keys) => keys.filter((k) => FACTS[k] && !seenFacts.has(k));
+  let key = unseen(wanted)[0];
+  if (!key) {
+    const fromPool = unseen(pool);
+    const any = fromPool.length ? fromPool : unseen(Object.keys(FACTS));
+    if (!any.length) {
+      seenFacts.clear();
+      return freshFact(wanted, pool);
+    }
+    key = any[Math.floor(Math.random() * any.length)];
+  }
+  markFactSeen(key);
+  return FACTS[key];
+}

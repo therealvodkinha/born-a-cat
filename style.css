@@ -612,30 +612,81 @@ body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
 /* ============================================================
    A new chapter of life: its name, big, and the cat's age.
    ============================================================ */
-#chapter { cursor: pointer; }
-#chapter h2 { animation: drop 0.7s 0.1s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
-#chapter .label { font-size: 1rem; animation: enter 0.5s 0.4s both; }
-.tap-hint { font-size: 0.85rem; color: var(--muted); font-style: italic; animation: enter 0.5s 1s both; }
+/* Time passing: the cat walks across the screen while its age changes. */
+.time-chapter { font-size: 1rem; min-height: 1.3em; animation: enter 0.5s both; }
+.time-age { margin: 0.1em 0 0.2em; min-height: 1em; }
+.time-age .new-age { display: inline-block; animation: drop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.road { position: relative; height: 150px; margin: 0.6em -18px 0; overflow: hidden; }
+.road-city { position: absolute; inset: auto 0 18px; height: 70px; opacity: 0.55; }
+.road-city .skyline { width: 100%; height: 100%; display: block; }
+.road::after { content: ""; position: absolute; left: 0; right: 0; bottom: 16px; border-top: 2px dashed var(--muted); opacity: 0.6; }
+.walker {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  width: calc(150px * var(--size, 1));
+  animation: cross 2.6s linear both;
+}
+@keyframes cross { from { transform: translateX(-110%); } to { transform: translateX(min(100vw, 480px)); } }
+.cat.walk-cat { scale: 1; display: block; width: 100%; height: auto; overflow: visible; animation: bob 0.35s ease-in-out infinite alternate; }
+@keyframes bob { to { transform: translateY(-2px); } }
+.walk-cat .leg { transform-box: fill-box; transform-origin: 50% 0; animation: step 0.35s ease-in-out infinite alternate; }
+.walk-cat .leg-b { animation-direction: alternate-reverse; }
+@keyframes step { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+.walk-cat .walk-tail { transform-origin: 34px 50px; animation: sway 0.7s ease-in-out infinite; }
+body[data-age="kitten"] .walk-head { transform-box: fill-box; transform-origin: 30% 80%; transform: scale(1.18); }
+body[data-cond="weak"] .walk-cat { filter: saturate(0.35); }
+.did-you-know { max-width: 34ch; margin: 1.2em auto 0; animation: enter 0.6s 2.4s both; }
+.did-you-know:empty { display: none; }
+
+/* ============================================================
+   Growing up and growing old
+   ============================================================ */
+.cat .acc-old { fill: #e9e4dc; opacity: 0.9; }
+.cat path.acc-old, .cat .acc-old path { fill: none; stroke: #e9e4dc; stroke-width: 2.4; stroke-linecap: round; }
+body[data-age="old"] .cat .acc-old { display: inline; }
+body[data-age="old"] .cat-tail { animation-duration: 5s; }
+body[data-age="kitten"] .cat .cat-head { scale: 1.15; transform-origin: 58px 62px; }
+body[data-age="kitten"] .cat > .body { scale: 0.92 0.88; transform-origin: 60px 108px; }
+
+/* ============================================================
+   The end of a life: night falls, the cat sleeps, a few words.
+   ============================================================ */
+body[data-tone="night"] { --disc: #3b3a55; --bg: #15141f; --ink: #e9e2d6; --muted: #9a93a8; --card: #22212f; }
+body[data-tone="night"] .horizon { opacity: 0.25; }
+#farewell .scene { margin-top: 1em; }
+#farewell .cat { animation: breathe-out 4s ease-in-out both; transform-origin: 50% 100%; }
+@keyframes breathe-out { 0%, 30%, 60% { transform: scaleY(1); } 15%, 45% { transform: scaleY(1.03); } 100% { transform: scaleY(0.97) translateY(4px); } }
+.farewell-line { text-align: center; opacity: 0; animation: enter 1.2s ease-out both; margin: 0.8em auto 0; max-width: 30ch; }
+#farewell-1 { animation-delay: 0.6s; }
+#farewell-2 { animation-delay: 1.8s; }
+#farewell-3 { animation-delay: 3.2s; margin-top: 1.4em; }
 
 /* ============================================================
    The cat card: the cat, and its stats as small gauges.
    ============================================================ */
 .cat-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 4px;
   background: var(--card);
   border: 2px solid var(--ink);
   border-radius: 6px 12px 8px 14px;
   box-shadow: 3px 3px 0 var(--ink);
-  padding: 8px 14px 8px 6px;
+  padding: 10px 14px 12px;
   margin: 0 0 1.2em;
   rotate: -0.4deg;
 }
-.cat-card .mini-cat { flex: 0 0 84px; width: 84px; height: 84px; margin: 0; display: flex; align-items: flex-end; }
+.cat-card .mini-cat { width: 150px; height: 140px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: center; }
+.cat-card .mini-cat::before { width: 82%; }
 .cat-card .mini-cat .cat { width: 100%; }
-.gauges { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.gauge { display: grid; grid-template-columns: 5.6em 1fr 2.2em; align-items: center; gap: 6px; }
+.gauges { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; }
+.gauges .card-name, .gauges .g-body { grid-column: 1 / -1; text-align: center; }
+.gauge { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name delta" "bar bar"; align-items: end; gap: 2px 4px; }
+.gauge .g-name { grid-area: name; }
+.gauge .g-bar { grid-area: bar; }
+.gauge .g-delta { grid-area: delta; }
 .g-name { font-family: var(--title); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: left; }
 .g-bar { height: 9px; border: 1.5px solid var(--ink); border-radius: 99px; overflow: hidden; background: transparent; }
 .g-bar i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width 0.9s cubic-bezier(0.3, 1.2, 0.5, 1), background-color 0.4s; }
@@ -649,8 +700,8 @@ body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
 .g-delta.up { color: var(--good); }
 .g-delta.down { color: #c9524f; }
 @keyframes float-up { 0% { opacity: 0; transform: translateY(8px) scale(0.6); } 20% { opacity: 1; transform: none scale(1.25); } 35% { transform: scale(1); } 100% { opacity: 1; } }
-.card-name { font-family: var(--title); font-size: 1rem; font-weight: 700; text-align: left; margin: 0 0 1px; }
-.g-body { font-family: var(--title); font-size: 0.82rem; color: var(--muted); text-align: left; margin: 2px 0 0; }
+.card-name { font-family: var(--title); font-size: 1.15rem; font-weight: 700; margin: 0 0 2px; }
+.g-body { font-family: var(--title); font-size: 0.82rem; color: var(--muted); margin: 4px 0 0; }
 .g-body .kg-delta { margin-left: 0.5em; }
 
 /* hearts flying out of the cat when it's happy */

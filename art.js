@@ -33,7 +33,9 @@ function coatStyle(c) {
 // data-mood on the element around it, and changes the eyes.
 // What happened in its life shows too: data-marks on <body> lists the
 // marks (see MARKS in stories.js) and switches on the "acc" drawings,
-// data-cond (strong, ok, weak) changes how healthy it looks.
+// data-cond (strong, ok, weak) changes how healthy it looks,
+// data-age (kitten, adult, old) changes its shape: a big head when young,
+// a grey muzzle when old.
 const CAT_SVG = `
 <svg class="cat" viewBox="0 0 120 120" aria-hidden="true">
   <ellipse class="cat-shadow" cx="60" cy="109" rx="34" ry="4"/>
@@ -77,6 +79,10 @@ const CAT_SVG = `
     </g>
     <path class="eyes eyes-happy line" d="M45 46 Q49 40 53 46 M63 46 Q67 40 71 46"/>
     <path class="eyes eyes-closed line" d="M45 44 Q49 48.5 53 44 M63 44 Q67 48.5 71 44"/>
+    <g class="acc acc-old">
+      <ellipse cx="58" cy="55" rx="9" ry="5"/>
+      <path d="M44 37 q5 -3 9 0 M63 37 q5 -3 9 0"/>
+    </g>
     <path class="eyes eyes-sad line" d="M45 45 L53 46 M63 46 L71 45"/>
     <path class="nose" d="M56 51 L60 51 L58 53.6 Z"/>
     <path class="line thin" d="M58 53.6 Q56 56.6 53.8 55.4 M58 53.6 Q60 56.6 62.2 55.4"/>
@@ -94,6 +100,35 @@ const CAT_SVG = `
     <circle class="bell" cx="58" cy="69.5" r="3.2"/>
   </g>
   <path class="acc acc-heart" d="M94 34 C90 28 82 31 86 37 L94 44 L102 37 C106 31 98 28 94 34 Z"/>
+</svg>`;
+
+// The cat seen from the side, walking to the right. Used between two steps
+// of its life, to show time passing. The legs move with CSS (see .walker).
+const WALK_SVG = `
+<svg class="cat walk-cat" viewBox="0 0 150 100" aria-hidden="true">
+  <ellipse class="cat-shadow" cx="72" cy="92" rx="46" ry="3.5"/>
+  <g class="walk-tail">
+    <path class="ol" d="M34 50 C18 46 12 30 18 18"/>
+    <path class="fill-stroke" d="M34 50 C18 46 12 30 18 18"/>
+  </g>
+  <g class="leg leg-a"><path class="ol" d="M44 58 V88"/><path class="fill-stroke" d="M44 58 V88"/></g>
+  <g class="leg leg-b"><path class="ol" d="M90 58 V88"/><path class="fill-stroke" d="M90 58 V88"/></g>
+  <path class="body" d="M30 52 C30 38 46 34 66 36 C86 38 100 38 104 48 C108 60 96 66 70 66 C44 66 30 64 30 52 Z"/>
+  <path class="stripes" d="M50 38 C52 44 52 48 50 52 M62 37 C64 43 64 48 62 52 M74 38 C76 44 76 48 74 52"/>
+  <path class="patch" d="M60 37 C74 36 84 40 86 50 C78 54 66 50 60 37 Z"/>
+  <g class="leg leg-b"><path class="ol" d="M52 60 V88"/><path class="fill-stroke" d="M52 60 V88"/></g>
+  <g class="leg leg-a"><path class="ol" d="M98 58 V88"/><path class="fill-stroke" d="M98 58 V88"/></g>
+  <g class="walk-head">
+    <path class="ear" d="M100 24 L104 6 L114 20 Z"/>
+    <path class="ear" d="M114 20 L124 8 L126 26 Z"/>
+    <ellipse class="head" cx="114" cy="34" rx="17" ry="15"/>
+    <path class="bib" d="M100 42 C104 52 116 52 122 46 C114 48 106 46 100 42 Z"/>
+    <ellipse class="eye" cx="120" cy="31" rx="2.6" ry="3.4"/>
+    <ellipse class="pupil" cx="121" cy="31" rx="1" ry="2.6"/>
+    <path class="nose" d="M129 36 L131.5 36 L130.5 38.5 Z"/>
+    <path class="whiskers" d="M124 40 L140 38 M124 42 L140 44"/>
+    <ellipse class="acc acc-old" cx="126" cy="41" rx="6" ry="4"/>
+  </g>
 </svg>`;
 
 // Small paw print, used to show how far along the life is.

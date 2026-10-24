@@ -943,12 +943,12 @@ const STORIES = {
       {
         when: "early",
         title: "Too small for Rabat",
-        text: "You never got very big. You knew one wall, one smell of bread, and the sea at night. That was your whole world. For a while, it was a good one.",
+        text: "You never got very big. You knew one wall, the smell of warm bread, and the sound of the sea at night. Your mother washed your ears every morning. It was a small world. It was yours, and it was warm.",
       },
       {
         when: "cut",
-        title: "Gone without a trace",
-        text: "One day, you just aren’t there anymore. Rabat has a hundred other cats. But someone walks past your wall and slows down a little.",
+        title: "Asleep in the shade",
+        text: "You fall asleep one afternoon in the shade of your wall, and you don’t wake up. Rabat has a hundred other cats. But someone walks past your wall and slows down a little, every day, for a long time.",
       },
       {
         when: "ancient",
@@ -1665,12 +1665,12 @@ const STORIES = {
       {
         when: "early",
         title: "Like the cherry blossoms",
-        text: "You were small, and Tokyo is very big. You knew one box, one vending machine, and the sound of the last train. It was short. It was bright, for a while.",
+        text: "You were small, and Tokyo is very big. You knew one box, one warm vending machine, and the sound of the last train. In Japan, people love the cherry blossoms because they don’t last. You were like that.",
       },
       {
         when: "cut",
-        title: "Gone without a trace",
-        text: "One day, you are simply not there anymore. In a city of fourteen million, nobody writes it down. But a child in a yellow hat looks for you on the way to school, for a few weeks.",
+        title: "A rice ball on the bench",
+        text: "You fall asleep under your bench one quiet night, and you don’t wake up. In a city of fourteen million, nobody writes it down. But a child in a yellow hat leaves a rice ball there, the next morning.",
       },
       {
         when: "ancient",

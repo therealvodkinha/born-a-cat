@@ -43,14 +43,17 @@
     </div>
   </main>
 
-  <main class="screen hidden" id="chapter">
-    <div class="scene">
-      <div class="disc"></div>
-      <div class="cat-slot"></div>
+  <main class="screen hidden" id="time">
+    <p class="label time-chapter" id="time-chapter"></p>
+    <h2 class="time-age"><span id="time-age"></span></h2>
+    <div class="road">
+      <div class="road-city" id="road-city"></div>
+      <div class="walker"></div>
     </div>
-    <p class="label" id="chapter-age"></p>
-    <h2 id="chapter-name"></h2>
-    <p class="tap-hint">tap to go on</p>
+    <p class="fact did-you-know" id="time-fact"></p>
+    <div class="actions">
+      <button id="time-btn" type="button">Go on</button>
+    </div>
   </main>
 
   <main class="screen hidden" id="event">
@@ -73,6 +76,19 @@
     <div class="actions">
       <div class="gains" id="gains"></div>
       <button id="next-btn" type="button">Continue</button>
+    </div>
+  </main>
+
+  <main class="screen hidden" id="farewell">
+    <div class="scene">
+      <div class="disc"></div>
+      <div class="cat-slot"></div>
+    </div>
+    <p class="story farewell-line" id="farewell-1"></p>
+    <p class="story farewell-line" id="farewell-2"></p>
+    <p class="label farewell-line" id="farewell-3"></p>
+    <div class="actions">
+      <button id="farewell-btn" type="button" class="secondary">…</button>
     </div>
   </main>
 
