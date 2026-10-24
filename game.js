@@ -277,11 +277,33 @@ function startStep() {
     age.textContent = step.age;
     age.className = "new-age";
   }, walk * 0.5);
+  // the end of the walk, now or when the timer runs out
+  startStep.skip = () => {
+    clearTimeout(startStep.timer);
+    clearTimeout(startStep.swap);
+    startStep.skip = null;
+    age.textContent = step.age;
+    if (!age.className) age.className = "new-age";
+    screen.classList.remove("waiting");
+    screen.classList.add("skipped");
+    if (!newChapter) showEvent();
+  };
+  screen.classList.remove("skipped");
   startStep.timer = setTimeout(() => {
     screen.classList.remove("waiting");
-    if (!newChapter) showEvent();
+    if (startStep.skip) {
+      startStep.skip = null;
+      if (!newChapter) showEvent();
+    }
   }, walk);
 }
+
+// A tap during the walk skips it. A tap on a chapter card goes on.
+screens.time.addEventListener("click", (e) => {
+  if (e.target.closest("a, button")) return;
+  if (startStep.skip) startStep.skip();
+  else showEvent();
+});
 
 function showEvent() {
   clearTimeout(startStep.timer);
@@ -548,8 +570,17 @@ function showFarewell() {
   SOUND.play("purr", 0.5);
   SOUND.play("farewell", 3);
   clearTimeout(showFarewell.timer);
+  screen.classList.remove("skipped");
   showFarewell.timer = setTimeout(() => screen.classList.remove("waiting"), calm ? 300 : 4200);
 }
+
+// A tap on the farewell shows all of it at once.
+screens.farewell.addEventListener("click", (e) => {
+  if (e.target.closest("button")) return;
+  clearTimeout(showFarewell.timer);
+  screens.farewell.classList.remove("waiting");
+  screens.farewell.classList.add("skipped");
+});
 
 // ------------------------------------------------------------
 // The end.

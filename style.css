@@ -638,6 +638,9 @@ body[data-age="kitten"] .walk-head { transform-box: fill-box; transform-origin: 
 body[data-cond="weak"] .walk-cat { filter: saturate(0.35); }
 .did-you-know { max-width: 34ch; margin: 1.2em auto 0; animation: enter 0.6s 2.4s both; }
 .did-you-know:empty { display: none; }
+#time, #farewell { cursor: pointer; }
+#time.skipped .walker { display: none; }
+#time.skipped .did-you-know, #farewell.skipped .farewell-line { animation: none; opacity: 1; }
 
 /* ============================================================
    Growing up and growing old
