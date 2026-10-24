@@ -33,6 +33,7 @@
     <p class="label">You were born in</p>
     <h2 id="city-name"></h2>
     <p id="city-line" class="tagline"></p>
+    <p id="coat-line" class="tagline trait"></p>
     <p id="trait-line" class="tagline trait"></p>
     <div class="actions">
       <button id="start-btn" type="button">Open your eyes</button>
@@ -40,19 +41,33 @@
     </div>
   </main>
 
+  <main class="screen hidden" id="chapter">
+    <div class="scene">
+      <div class="disc"></div>
+      <div class="cat-slot"></div>
+    </div>
+    <p class="label" id="chapter-age"></p>
+    <h2 id="chapter-name"></h2>
+    <p class="tap-hint">tap to go on</p>
+  </main>
+
   <main class="screen hidden" id="event">
     <header class="life">
       <p class="label" id="event-count"></p>
       <div class="paws" id="paws"></div>
     </header>
+    <div class="cat-card" id="event-card"></div>
     <div class="status" id="status"></div>
     <p class="story" id="event-text"></p>
     <div class="choices" id="choices"></div>
+    <div class="gesture hidden" id="gesture"></div>
   </main>
 
   <main class="screen hidden" id="result">
-    <div class="mini-cat cat-slot"></div>
+    <div class="cat-card" id="result-card"></div>
+    <div class="factors" id="factors"></div>
     <p class="story" id="result-text"></p>
+    <p class="event-fact after-text" id="event-fact"></p>
     <div class="actions">
       <div class="gains" id="gains"></div>
       <button id="next-btn" type="button">Continue</button>
@@ -69,6 +84,7 @@
       <p class="label" id="end-city"></p>
       <h2 id="ending-title"></h2>
       <p class="odds" id="odds"></p>
+      <p class="end-life" id="end-life"></p>
       <p class="story" id="ending-text"></p>
       <div class="status after-text" id="end-status"></div>
       <p class="fact after-text" id="fact"></p>
