@@ -37,6 +37,7 @@ function showState() {
   // the drawing grows with the cat, and gets fatter or thinner with food
   const size = 0.45 + 0.55 * Math.min(1.1, sizeOf(life) / 46);
   SOUND.size = size;
+  SOUND.kitten = chapter <= 1;
   document.body.style.setProperty("--size", size.toFixed(3));
   document.body.style.setProperty("--fat", (1 + 0.07 * life.fed).toFixed(3));
 }
@@ -268,6 +269,7 @@ function startStep() {
   show("time");
   SOUND.mood("day");
   SOUND.play("steps", 0.1);
+  SOUND.play("city-" + life.city, 0.3);
   if (newChapter) SOUND.play("chapter", calm ? 0.6 : 2.6);
 
   const walk = calm ? 600 : 2600;
@@ -336,6 +338,7 @@ function showEvent() {
   show("event");
   showEvent.event = event;
   typeText(document.getElementById("event-text"), event.text);
+  if (/\bdogs?\b/i.test(event.text)) SOUND.play("bark", 0.4);
 }
 
 // ------------------------------------------------------------
@@ -566,9 +569,9 @@ function showFarewell() {
   const screen = screens.farewell;
   screen.classList.add("waiting");
   show("farewell");
-  SOUND.mood("night");
+  SOUND.mood("day");
+  SOUND.music("farewell");
   SOUND.play("purr", 0.5);
-  SOUND.play("farewell", 3);
   clearTimeout(showFarewell.timer);
   screen.classList.remove("skipped");
   showFarewell.timer = setTimeout(() => screen.classList.remove("waiting"), calm ? 300 : 4200);
