@@ -30,7 +30,7 @@ const SOUND = (() => {
     hiss: ["sounds/hiss.mp3"],
     bark: ["sounds/bark.mp3"],
     // the sound of the city, while the cat walks
-    "city-Rabat": ["sounds/city-rabat.mp3"], // seagulls
+    "city-Rabat": ["sounds/city-rabat-1.mp3", "sounds/city-rabat-2.mp3"], // seagulls
     "city-Tokyo": ["sounds/city-tokyo.mp3"], // cicadas
   };
   const MUSIC = {
@@ -53,6 +53,8 @@ const SOUND = (() => {
     sfxBus = ctx.createGain();
     sfxBus.gain.value = 0.7;
     sfxBus.connect(master);
+    // load the recordings now, so the first bark is not late
+    Object.values(FILES).flat().forEach(load);
   }
 
   // white noise, made once
@@ -243,37 +245,51 @@ const SOUND = (() => {
 
   // ------------------------------------------------------------
   // Music: one recording per city, looping softly (see MUSIC above).
+  // It goes through Web Audio like the other sounds, so that muting and
+  // fading work on phones too (iPhones ignore the volume of an <audio>).
   // ------------------------------------------------------------
-  const track = new Audio();
-  track.loop = true;
+  const tracks = {}; // path -> { el, gain }
+  let current = null;
   let level = 0.35;
 
-  // Changing track fades the old one out first.
-  let fade = null;
-  function music(name) {
-    const path = MUSIC[name];
-    clearInterval(fade);
-    if (track.src.endsWith(path || "\0")) {
-      track.volume = muted ? 0 : level;
-      track.play().catch(() => {});
-      return;
+  function trackOf(path) {
+    if (!tracks[path]) {
+      const el = new Audio(path);
+      el.loop = true;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      ctx.createMediaElementSource(el).connect(gain).connect(master);
+      tracks[path] = { el, gain };
     }
-    fade = setInterval(() => {
-      track.volume = Math.max(0, track.volume - 0.05);
-      if (track.volume > 0 && !track.paused) return;
-      clearInterval(fade);
-      track.pause();
-      if (!path) return;
-      track.src = path;
-      track.volume = muted ? 0 : level;
-      track.play().catch(() => {});
-    }, 60);
+    return tracks[path];
   }
 
-  // "night": quieter, for the end of a life
+  // Changing track fades the old one out while the new one fades in.
+  // play() is called right away: phones only allow it during a tap.
+  function music(name) {
+    init();
+    if (!ctx) return;
+    const path = MUSIC[name];
+    const next = path ? trackOf(path) : null;
+    const t = ctx.currentTime;
+    const old = current;
+    current = next;
+    if (old && old !== next) {
+      old.gain.gain.cancelScheduledValues(t);
+      old.gain.gain.setTargetAtTime(0, t, 0.3);
+      setTimeout(() => current !== old && old.el.pause(), 2000);
+    }
+    if (!next) return;
+    next.gain.gain.cancelScheduledValues(t);
+    next.gain.gain.setTargetAtTime(level, t, old === next ? 0.3 : 0.8);
+    if (old !== next) next.el.currentTime = 0;
+    next.el.play().catch(() => {});
+  }
+
+  // "night": quieter
   function mood(name) {
     level = name === "night" ? 0.15 : 0.35;
-    if (!muted) track.volume = level;
+    if (current) current.gain.gain.setTargetAtTime(level, ctx.currentTime, 0.5);
   }
 
   function toggle() {
@@ -283,7 +299,6 @@ const SOUND = (() => {
     } catch (e) {}
     init();
     if (master) master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.05);
-    track.volume = muted ? 0 : level;
     return muted;
   }
 
