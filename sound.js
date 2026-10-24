@@ -1,7 +1,9 @@
-// Sounds and music. Everything is made in the browser with the Web Audio API:
-// no sound files to download, and no licences to worry about.
-// These are placeholders until real recordings arrive: to use a recording,
-// load it in play() instead of building the sound.
+// Sounds and music.
+// Real recordings go in the sounds/ folder and are listed in FILES below.
+// A sound with a file uses the file (one of them at random if there are
+// several). A sound without a file is made in the browser (Web Audio API),
+// except the meow and the music: made-up ones sounded wrong, so without a
+// file they stay silent.
 //
 //   SOUND.play("meow")   plays one sound (see SFX below)
 //   SOUND.music("Rabat") starts the background music of a city
@@ -13,11 +15,23 @@
 
 const SOUND = (() => {
   let ctx = null;
-  let master, sfxBus, musicBus, echo;
+  let master, sfxBus;
   let muted = false;
   try {
     muted = localStorage.getItem("born-a-cat:muted") === "1";
   } catch (e) {}
+
+  // Recordings. Paths are relative to index.html. Leave a list empty to
+  // use the made-up sound instead.
+  const FILES = {
+    meow: [],
+    purr: [],
+    hiss: [],
+  };
+  const MUSIC = {
+    Rabat: "",
+    Tokyo: "",
+  };
 
   let size = 1; // how big the cat is (0.5 = newborn, 1 = adult): small cats meow higher
 
@@ -32,19 +46,6 @@ const SOUND = (() => {
     sfxBus = ctx.createGain();
     sfxBus.gain.value = 0.7;
     sfxBus.connect(master);
-    musicBus = ctx.createGain();
-    musicBus.gain.value = 0.22;
-    musicBus.connect(master);
-    // a soft echo for the music, so plucked notes ring in a room
-    echo = ctx.createDelay(1);
-    echo.delayTime.value = 0.32;
-    const feedback = ctx.createGain();
-    feedback.gain.value = 0.35;
-    const tone = ctx.createBiquadFilter();
-    tone.type = "lowpass";
-    tone.frequency.value = 1800;
-    echo.connect(tone).connect(feedback).connect(echo);
-    tone.connect(musicBus);
   }
 
   // white noise, made once
@@ -96,34 +97,6 @@ const SOUND = (() => {
       n.connect(f).connect(envelope(t, 0.002, 0, 0.05, 0.35)).connect(sfxBus);
       n.start(t);
       n.stop(t + 0.08);
-    },
-
-    // a meow: a buzzing voice whose pitch rises then falls, shaped by two
-    // filters that move like a mouth going "mi-a-ow"
-    meow(t) {
-      const base = 520 / Math.max(0.55, size);
-      const dur = 0.6;
-      const o = ctx.createOscillator();
-      o.type = "sawtooth";
-      o.frequency.setValueAtTime(base * 0.85, t);
-      o.frequency.linearRampToValueAtTime(base * 1.2, t + 0.16);
-      o.frequency.exponentialRampToValueAtTime(base * 0.72, t + dur);
-      const out = envelope(t, 0.05, 0.3, 0.25, 0.5);
-      for (const [a, b, c, q] of [
-        [600, 1100, 500, 7],
-        [2300, 1700, 950, 9],
-      ]) {
-        const f = ctx.createBiquadFilter();
-        f.type = "bandpass";
-        f.Q.value = q;
-        f.frequency.setValueAtTime(a, t);
-        f.frequency.linearRampToValueAtTime(b, t + 0.2);
-        f.frequency.linearRampToValueAtTime(c, t + dur);
-        o.connect(f).connect(out);
-      }
-      out.connect(sfxBus);
-      o.start(t);
-      o.stop(t + dur + 0.1);
     },
 
     // a purr: low rumbling noise, pulsing about 25 times a second
@@ -233,82 +206,62 @@ const SOUND = (() => {
     },
   };
 
+  // recordings, loaded once each
+  const buffers = {};
+  function load(path) {
+    if (!buffers[path]) {
+      buffers[path] = fetch(path)
+        .then((r) => r.arrayBuffer())
+        .then((data) => new Promise((ok, fail) => ctx.decodeAudioData(data, ok, fail)))
+        .catch(() => null);
+    }
+    return buffers[path];
+  }
+
   function play(name, delay = 0) {
     if (muted) return;
     init();
-    if (!ctx || !SFX[name]) return;
-    SFX[name](ctx.currentTime + delay);
+    if (!ctx) return;
+    const files = FILES[name] || [];
+    if (files.length) {
+      const path = files[Math.floor(Math.random() * files.length)];
+      const at = ctx.currentTime + delay;
+      load(path).then((buffer) => {
+        if (!buffer) return;
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+        // small cats sound a little higher
+        if (name === "meow") src.playbackRate.value = 1 + Math.max(0, 1 - size) * 0.5;
+        src.connect(sfxBus);
+        src.start(Math.max(at, ctx.currentTime));
+      });
+      return;
+    }
+    if (SFX[name]) SFX[name](ctx.currentTime + delay);
   }
 
   // ------------------------------------------------------------
-  // Music: plucked notes drawn at random from the scale of the city,
-  // over a quiet low note. Never the same twice, never really loud.
+  // Music: one recording per city, looping softly (see MUSIC above).
   // ------------------------------------------------------------
-  const SONGS = {
-    // a maqam Hijaz on D, plucked like an oud
-    Rabat: { drone: 73.4, notes: [293.7, 311.1, 370, 392, 440, 466.2, 523.3, 587.3], wave: "sawtooth", cutoff: 1400, gap: [0.35, 0.9] },
-    // the in scale, plucked like a koto
-    Tokyo: { drone: 82.4, notes: [329.6, 349.2, 440, 493.9, 523.3, 659.3, 698.5], wave: "triangle", cutoff: 3000, gap: [0.6, 1.6] },
-  };
-  let song = null;
-  let timer = null;
-  let droneOsc = null;
-  let slow = 1;
-
-  function pluck(freq, t) {
-    const o = ctx.createOscillator();
-    o.type = song.wave;
-    o.frequency.value = freq;
-    const f = ctx.createBiquadFilter();
-    f.type = "lowpass";
-    f.frequency.setValueAtTime(song.cutoff, t);
-    f.frequency.exponentialRampToValueAtTime(300, t + 0.8);
-    const g = envelope(t, 0.005, 0, 1.1, 0.25);
-    o.connect(f).connect(g);
-    g.connect(musicBus);
-    g.connect(echo);
-    o.start(t);
-    o.stop(t + 1.3);
-  }
-
-  function nextNote() {
-    if (!song || !ctx) return;
-    // mostly small steps up or down the scale, sometimes a jump
-    const i = nextNote.i ?? 0;
-    const step = Math.random() < 0.8 ? (Math.random() < 0.5 ? -1 : 1) : Math.floor(Math.random() * 5) - 2;
-    nextNote.i = Math.max(0, Math.min(song.notes.length - 1, i + step));
-    pluck(song.notes[nextNote.i], ctx.currentTime + 0.02);
-    const [a, b] = song.gap;
-    timer = setTimeout(nextNote, (a + Math.random() * (b - a)) * 1000 * slow);
-  }
+  const track = new Audio();
+  track.loop = true;
+  let level = 0.35;
 
   function music(city) {
-    init();
-    if (!ctx) return;
-    stopMusic();
-    song = SONGS[city];
-    if (!song) return;
-    droneOsc = ctx.createOscillator();
-    droneOsc.frequency.value = song.drone;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 3);
-    droneOsc.connect(g).connect(musicBus);
-    droneOsc.start();
-    nextNote();
+    const path = MUSIC[city];
+    if (!path) {
+      track.pause();
+      return;
+    }
+    if (!track.src.endsWith(path)) track.src = path;
+    track.volume = muted ? 0 : level;
+    track.play().catch(() => {});
   }
 
-  function stopMusic() {
-    clearTimeout(timer);
-    if (droneOsc) droneOsc.stop();
-    droneOsc = null;
-    song = null;
-  }
-
-  // "night": slower and quieter, for the end of a life
+  // "night": quieter, for the end of a life
   function mood(name) {
-    slow = name === "night" ? 2.6 : 1;
-    if (musicBus) musicBus.gain.setTargetAtTime(name === "night" ? 0.12 : 0.22, ctx.currentTime, 1);
+    level = name === "night" ? 0.15 : 0.35;
+    if (!muted) track.volume = level;
   }
 
   function toggle() {
@@ -318,6 +271,7 @@ const SOUND = (() => {
     } catch (e) {}
     init();
     if (master) master.gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.05);
+    track.volume = muted ? 0 : level;
     return muted;
   }
 
