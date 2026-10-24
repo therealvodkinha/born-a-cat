@@ -1,22 +1,18 @@
 // The story text lives in stories.js, the drawings in art.js, the rules
 // of chance in rules.js, real cat facts in facts.js.
-// This file only runs the game.
+// This file only runs the game: screens, gauges, gestures, effects.
 // New York comes in a later update.
 
 const screens = {
   home: document.getElementById("home"),
   birth: document.getElementById("birth"),
+  chapter: document.getElementById("chapter"),
   event: document.getElementById("event"),
   result: document.getElementById("result"),
   ending: document.getElementById("ending"),
 };
 
-let city = null;        // name of the city, e.g. "Rabat"
-let trait = null;       // the cat's trait, from TRAITS
-let step = 0;           // which life stage we are on
-let goodCount = 0;      // how many choices went well
-let badCount = 0;       // how many choices went badly
-let marks = new Set();  // things the cat remembers (see "mark" in stories.js)
+let life = null; // the cat's whole life, see newLife() in rules.js
 
 const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -33,21 +29,119 @@ function setLook(key, value) {
 
 // Shows what happened to the cat: on the drawing, and as little stamps.
 function showState() {
-  setLook("marks", [...marks].join(" "));
-  setLook("cond", conditionOf(goodCount, badCount));
+  setLook("marks", [...life.marks].join(" "));
+  setLook("cond", conditionOf(life));
+  // the drawing grows with the cat, and gets fatter or thinner with food
+  const size = 0.45 + 0.55 * Math.min(1.1, sizeOf(life) / 46);
+  document.body.style.setProperty("--size", size.toFixed(3));
+  document.body.style.setProperty("--fat", (1 + 0.07 * life.fed).toFixed(3));
 }
 
 function statePills() {
-  const cond = conditionOf(goodCount, badCount);
+  const cond = conditionOf(life);
   const pills = [];
   if (cond !== "ok") pills.push(`<span class="pill cond-${cond}">${CONDITIONS[cond].label}</span>`);
-  for (const mark of marks) {
+  for (const mark of life.marks) {
     const info = MARKS[mark];
     if (info) pills.push(`<span class="pill ${info.good ? "good" : "bad"}">${info.label}</span>`);
   }
   return pills.join("");
 }
 
+// ------------------------------------------------------------
+// The cat card: the cat, and its stats as little gauges.
+// ------------------------------------------------------------
+const GAUGES = [
+  { key: "health", name: "Health" },
+  { key: "happy", name: "Happiness" },
+  { key: "strength", name: "Strength" },
+];
+
+function buildCard(card) {
+  card.innerHTML =
+    `<div class="mini-cat cat-slot">${CAT_SVG}<div class="hearts"></div></div>` +
+    `<div class="gauges">` +
+    GAUGES.map(
+      (g) =>
+        `<div class="gauge" data-k="${g.key}"><span class="g-name">${g.name}</span>` +
+        `<span class="g-bar"><i></i></span><b class="g-delta"></b></div>`
+    ).join("") +
+    `<p class="g-body"><span class="kg"></span> · <span class="cm"></span><b class="g-delta kg-delta"></b></p>` +
+    `</div>`;
+}
+
+// Updates a card. With "change", the gauges first show the old values,
+// then slide to the new ones, with the difference popping up.
+function updateCard(card, change) {
+  const set = () => {
+    for (const g of GAUGES) {
+      const v = life.stats[g.key];
+      const el = card.querySelector(`[data-k="${g.key}"]`);
+      el.querySelector("i").style.width = v + "%";
+      el.classList.toggle("low", g.key !== "strength" && v <= 25);
+    }
+    card.querySelector(".kg").textContent = weightOf(life).toFixed(1) + " kg";
+    card.querySelector(".cm").textContent = sizeOf(life) + " cm";
+  };
+  for (const d of card.querySelectorAll(".g-delta")) {
+    d.textContent = "";
+    d.className = d.className.replace(/ (up|down)/g, "");
+  }
+  if (!change) return set();
+
+  // old values first
+  for (const g of GAUGES) {
+    const old = life.stats[g.key] - change[g.key];
+    const i = card.querySelector(`[data-k="${g.key}"] i`);
+    i.style.transition = "none";
+    i.style.width = old + "%";
+  }
+  card.offsetWidth; // let the browser draw the old values
+  for (const i of card.querySelectorAll(".g-bar i")) i.style.transition = "";
+  requestAnimationFrame(() => {
+    set();
+    for (const g of GAUGES) {
+      const n = change[g.key];
+      if (!n) continue;
+      const d = card.querySelector(`[data-k="${g.key}"] .g-delta`);
+      d.textContent = (n > 0 ? "+" : "−") + Math.abs(n);
+      d.classList.add(n > 0 ? "up" : "down");
+    }
+    if (change.kg) {
+      const d = card.querySelector(".kg-delta");
+      d.textContent = (change.kg > 0 ? "+" : "−") + Math.abs(change.kg).toFixed(1);
+      d.classList.add(change.kg > 0 ? "up" : "down");
+    }
+  });
+}
+
+// Little hearts flying out of the cat.
+function hearts(card, count) {
+  const box = card.querySelector(".hearts");
+  box.replaceChildren();
+  if (calm) return;
+  for (let n = 0; n < count; n++) {
+    const h = document.createElement("i");
+    h.textContent = "♥";
+    h.style.left = 20 + Math.random() * 60 + "%";
+    h.style.animationDelay = 0.2 + n * 0.12 + "s";
+    h.style.setProperty("--drift", (Math.random() * 40 - 20).toFixed(0) + "px");
+    box.appendChild(h);
+  }
+}
+
+// The whole screen shakes and flashes red when the cat gets hurt.
+function hit() {
+  if (calm) return;
+  document.body.classList.remove("hit");
+  document.body.offsetWidth;
+  document.body.classList.add("hit");
+  setTimeout(() => document.body.classList.remove("hit"), 700);
+}
+
+// ------------------------------------------------------------
+// Text that types itself.
+// ------------------------------------------------------------
 // Writes a text quickly, letter by letter, with short pauses after
 // punctuation. Short texts appear at once, long ones never take more than
 // about a second. The buttons only appear once the text is complete.
@@ -101,30 +195,28 @@ document.addEventListener("pointerdown", (e) => {
   if (typing && typing.screen.contains(e.target)) typing.finish();
 });
 
+// ------------------------------------------------------------
+// A life, step by step.
+// ------------------------------------------------------------
 function beBorn() {
-  city = pick(Object.keys(STORIES));
-  trait = pick(TRAITS);
-  step = 0;
-  goodCount = 0;
-  badCount = 0;
-  marks = new Set();
-
   const coat = pick(COATS);
+  life = newLife(pick(Object.keys(STORIES)), coat.id);
+
   document.body.style.cssText = coatStyle(coat);
   setLook("coat", coat.id);
-  setLook("city", city);
+  setLook("city", life.city);
   setLook("mood", "awake");
   setLook("tone", null);
   showState();
-  document.getElementById("horizon").innerHTML = SKYLINES[city] || "";
-  document.getElementById("scene-city").innerHTML = SKYLINES[city] || "";
+  document.getElementById("horizon").innerHTML = SKYLINES[life.city] || "";
+  document.getElementById("scene-city").innerHTML = SKYLINES[life.city] || "";
   document.getElementById("confetti").replaceChildren();
 
   // the name of the city falls in letter by letter
   const name = document.getElementById("city-name");
-  name.setAttribute("aria-label", city);
+  name.setAttribute("aria-label", life.city);
   name.replaceChildren(
-    ...[...city].map((letter, n) => {
+    ...[...life.city].map((letter, n) => {
       const span = document.createElement("span");
       span.textContent = letter;
       span.setAttribute("aria-hidden", "true");
@@ -132,53 +224,220 @@ function beBorn() {
       return span;
     })
   );
-  document.getElementById("city-line").textContent = STORIES[city].line;
-  document.getElementById("trait-line").textContent = trait.line;
+  document.getElementById("city-line").textContent = STORIES[life.city].line;
+  document.getElementById("coat-line").textContent = COAT_LINES[coat.id] || "";
+  document.getElementById("trait-line").textContent = life.trait.line;
   show("birth");
 }
 
+// A new step: the cat grows. A new chapter of life gets its own title card.
+function startStep() {
+  const step = stepOf(life);
+  const firstOfChapter = life.step === 0 || STEPS[life.step - 1].chapter !== step.chapter;
+  beginStep(life);
+  showState();
+  if (!firstOfChapter) return showEvent();
+
+  document.getElementById("chapter-name").textContent = step.chapter.name;
+  document.getElementById("chapter-age").textContent = step.age;
+  setLook("mood", "awake");
+  setLook("tone", null);
+  show("chapter");
+  clearTimeout(startStep.timer);
+  startStep.timer = setTimeout(showEvent, calm ? 1200 : 1900);
+}
+
 function showEvent() {
-  const stages = STORIES[city].stages;
-  const stage = stages[step];
-  const event = drawEvent(stage, marks);
+  clearTimeout(startStep.timer);
+  const step = stepOf(life);
+  const event = drawEvent(life);
 
   setLook("mood", "awake");
   setLook("tone", null);
-  document.getElementById("event-count").textContent =
-    stage.name + " · " + (step + 1) + "/" + stages.length;
-
-  // one paw per stage of life: done, now, still to come
-  document.getElementById("paws").innerHTML = stages
-    .map((s, n) => PAW_SVG.replace("<svg", `<svg class="${n < step ? "done" : n === step ? "now" : ""}"`))
+  document.getElementById("event-count").textContent = step.chapter.name + " · " + step.age;
+  // one paw per step lived, never the ones still to come
+  document.getElementById("paws").innerHTML = STEPS.slice(0, life.step + 1)
+    .map((s, n) => PAW_SVG.replace("<svg", `<svg class="${n < life.step ? "done" : "now"}"`))
     .join("");
+  updateCard(document.getElementById("event-card"));
   document.getElementById("status").innerHTML = statePills();
 
   const box = document.getElementById("choices");
   box.replaceChildren();
+  box.classList.remove("hidden");
+  document.getElementById("gesture").classList.add("hidden");
   event.choices.forEach((choice) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = choice.label;
-    btn.addEventListener("click", () => choose(choice));
+    if (choice.gesture) btn.dataset.gesture = choice.gesture;
+    btn.addEventListener("click", () => (choice.gesture ? startGesture(choice) : choose(choice, 0)));
     box.appendChild(btn);
   });
   show("event");
+  showEvent.event = event;
   typeText(document.getElementById("event-text"), event.text);
 }
 
-function choose(choice) {
-  const condBefore = conditionOf(goodCount, badCount);
-  const wentWell = rollChoice(choice, trait);
-  if (wentWell) goodCount++;
-  else badCount++;
-  const mark = wentWell ? choice.goodMark : choice.badMark;
-  const isNew = mark && !marks.has(mark);
-  if (mark) marks.add(mark);
-  const cond = conditionOf(goodCount, badCount);
+// ------------------------------------------------------------
+// Gestures: some choices are not just a tap.
+//   pounce: tap when the paw crosses the gold zone
+//   hold:   keep your finger down until the circle is full
+//   run:    tap as fast as you can
+// Each one gives a "skill" bonus or malus to the chance (see GESTURES).
+// ------------------------------------------------------------
+function startGesture(choice) {
+  document.getElementById("choices").classList.add("hidden");
+  const panel = document.getElementById("gesture");
+  panel.classList.remove("hidden");
+  panel.dataset.kind = choice.gesture;
+  const done = (skill, word) => {
+    panel.querySelector(".g-verdict").textContent = word;
+    panel.classList.add("judged", skill > 0.1 ? "great" : skill > 0 ? "fine" : "poor");
+    setTimeout(() => {
+      panel.className = "gesture hidden";
+      choose(choice, skill);
+    }, 650);
+  };
+  panel.className = "gesture";
+  ({ pounce: pounceGame, hold: holdGame, run: runGame })[choice.gesture](panel, choice, done);
+}
+
+function verdict(score) {
+  if (score >= 1) return [0.2, "Perfect!"];
+  if (score >= 0.5) return [0.05, "Not bad"];
+  return [-0.1, "Too bad"];
+}
+
+function pounceGame(panel, choice, done) {
+  const zone = 0.2 + Math.random() * 0.6; // centre of the gold zone, 0 to 1
+  const width = 0.16;
+  panel.innerHTML =
+    `<p class="g-hint">${GESTURES.pounce.hint}</p>` +
+    `<div class="track"><span class="zone" style="left:${(zone - width / 2) * 100}%;width:${width * 100}%"></span>` +
+    `<span class="marker">${PAW_SVG}</span></div>` +
+    `<button type="button" class="g-btn">${choice.label}!</button><p class="g-verdict"></p>`;
+  const marker = panel.querySelector(".marker");
+  const start = performance.now();
+  const period = 1300; // ms for a full sweep there and back
+  let x = 0;
+  let frame;
+  const tick = (now) => {
+    const t = ((now - start) % period) / period;
+    x = t < 0.5 ? t * 2 : 2 - t * 2;
+    marker.style.left = x * 100 + "%";
+    frame = requestAnimationFrame(tick);
+  };
+  frame = requestAnimationFrame(tick);
+  panel.querySelector(".g-btn").addEventListener(
+    "click",
+    () => {
+      cancelAnimationFrame(frame);
+      const off = Math.abs(x - zone);
+      const [skill, word] = verdict(off <= width / 2 ? 1 : off <= width ? 0.5 : 0);
+      done(skill, word);
+    },
+    { once: true }
+  );
+}
+
+function holdGame(panel, choice, done) {
+  const needed = 1600; // ms
+  panel.innerHTML =
+    `<p class="g-hint">${GESTURES.hold.hint}</p>` +
+    `<button type="button" class="g-btn hold-btn"><svg viewBox="0 0 100 100" class="ring"><circle cx="50" cy="50" r="44"/><circle class="fill" cx="50" cy="50" r="44" pathLength="100"/></svg><span>Hold</span></button>` +
+    `<p class="g-verdict"></p>`;
+  const btn = panel.querySelector(".g-btn");
+  const fill = panel.querySelector(".fill");
+  let start = null;
+  let frame;
+  let over = false;
+  const finish = (fraction) => {
+    if (over) return;
+    over = true;
+    cancelAnimationFrame(frame);
+    btn.classList.remove("holding");
+    done(...verdict(fraction >= 1 ? 1 : fraction >= 0.6 ? 0.5 : 0));
+  };
+  const tick = (now) => {
+    const f = Math.min(1, (now - start) / needed);
+    fill.style.strokeDashoffset = 100 - f * 100;
+    if (f >= 1) return finish(1);
+    frame = requestAnimationFrame(tick);
+  };
+  const down = (e) => {
+    e.preventDefault();
+    if (start !== null || over) return;
+    start = performance.now();
+    btn.classList.add("holding");
+    frame = requestAnimationFrame(tick);
+  };
+  const up = () => {
+    if (start === null) return;
+    finish((performance.now() - start) / needed);
+  };
+  btn.addEventListener("pointerdown", down);
+  btn.addEventListener("pointerup", up);
+  btn.addEventListener("pointerleave", up);
+  btn.addEventListener("pointercancel", up);
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+  btn.addEventListener("keydown", (e) => {
+    if ((e.key === " " || e.key === "Enter") && !e.repeat) down(e);
+  });
+  btn.addEventListener("keyup", (e) => {
+    if (e.key === " " || e.key === "Enter") up();
+  });
+}
+
+function runGame(panel, choice, done) {
+  const goal = 12;
+  const time = 2500; // ms, from the first tap
+  panel.innerHTML =
+    `<p class="g-hint">${GESTURES.run.hint}</p>` +
+    `<div class="track run"><span class="run-fill"></span><span class="marker">${PAW_SVG}</span></div>` +
+    `<button type="button" class="g-btn">Run!</button><p class="g-verdict"></p>`;
+  const fill = panel.querySelector(".run-fill");
+  const marker = panel.querySelector(".marker");
+  const btn = panel.querySelector(".g-btn");
+  let taps = 0;
+  let timer = null;
+  const finish = () => {
+    clearTimeout(timer);
+    btn.disabled = true;
+    done(...verdict(taps >= goal ? 1 : taps >= goal * 0.6 ? 0.5 : 0));
+  };
+  btn.addEventListener("click", () => {
+    if (btn.disabled) return;
+    if (!timer) timer = setTimeout(finish, time);
+    taps++;
+    const f = Math.min(1, taps / goal);
+    fill.style.width = f * 100 + "%";
+    marker.style.left = f * 100 + "%";
+    btn.classList.remove("bump");
+    btn.offsetWidth;
+    btn.classList.add("bump");
+    if (taps >= goal) finish();
+  });
+}
+
+// ------------------------------------------------------------
+// What happens after a choice.
+// ------------------------------------------------------------
+function choose(choice, skill) {
+  const condBefore = conditionOf(life);
+  const { wentWell, factors, text } = rollChoice(choice, life, skill);
+  const { change, mark } = applyOutcome(life, choice, wentWell);
+  const cond = conditionOf(life);
+
+  // why it went like that: the trait, the stats, the past, the gesture
+  document.getElementById("factors").innerHTML = factors
+    .filter((f) => f.label)
+    .map((f) => `<span class="factor ${f.delta > 0 ? "plus" : "minus"}">${f.delta > 0 ? "+" : "−"} ${f.label}</span>`)
+    .join("");
 
   // what the cat just won or lost
   const gains = [];
-  if (isNew && MARKS[mark]) {
+  if (mark && MARKS[mark]) {
     const info = MARKS[mark];
     gains.push(`<p class="gain ${info.good ? "good" : "bad"}">${info.good ? "+ " : ""}${info.label}</p>`);
   }
@@ -188,29 +447,44 @@ function choose(choice) {
   }
   document.getElementById("gains").innerHTML = gains.join("");
 
+  const fact = FACTS[showEvent.event.fact];
+  document.getElementById("event-fact").innerHTML = fact
+    ? `<b>True story</b> ${fact.text} <a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
+    : "";
+
   setLook("mood", wentWell ? "happy" : "sad");
   setLook("tone", wentWell ? "good" : "bad");
   showState();
+  const card = document.getElementById("result-card");
+  updateCard(card, change);
+  if (change.happy >= 10) hearts(card, Math.min(6, Math.round(change.happy / 3)));
+  else card.querySelector(".hearts").replaceChildren();
+  if (change.health <= -20) hit();
+
+  const nextBtn = document.getElementById("next-btn");
+  nextBtn.textContent = life.death ? "…" : "Continue";
   show("result");
-  typeText(document.getElementById("result-text"), wentWell ? choice.good : choice.bad);
+  typeText(document.getElementById("result-text"), text);
 }
 
 function next() {
-  step++;
-  if (step < STORIES[city].stages.length) showEvent();
+  if (endStep(life)) startStep();
   else showEnding();
 }
 
+// ------------------------------------------------------------
+// The end.
+// ------------------------------------------------------------
 // Endings already found, kept in this browser only.
 function rememberEnding(title) {
   let found = {};
   try {
     found = JSON.parse(localStorage.getItem("born-a-cat:found")) || {};
   } catch (e) {}
-  const list = found[city] || [];
+  const list = found[life.city] || [];
   const isNew = !list.includes(title);
   if (isNew) list.push(title);
-  found[city] = list;
+  found[life.city] = list;
   try {
     localStorage.setItem("born-a-cat:found", JSON.stringify(found));
   } catch (e) {}
@@ -218,14 +492,14 @@ function rememberEnding(title) {
 }
 
 function factFor(ending) {
-  const key = ENDING_FACTS[ending.title] || pick(CITY_FACTS[city] || Object.keys(FACTS));
+  const key = ending.fact || ENDING_FACTS[ending.title] || pick(CITY_FACTS[life.city] || Object.keys(FACTS));
   return FACTS[key];
 }
 
 function oddsLine(odds) {
   if (!odds) return "";
-  if (odds >= 0.2) return `<strong>${Math.round(odds * 100)}%</strong> of lives in ${city} end like this`;
-  return `Only <strong>1 life in ${Math.round(1 / odds)}</strong> in ${city} ends like this`;
+  if (odds >= 0.2) return `<strong>${Math.round(odds * 100)}%</strong> of lives in ${life.city} end like this`;
+  return `Only <strong>1 life in ${Math.round(1 / odds)}</strong> in ${life.city} ends like this`;
 }
 
 function throwConfetti(count) {
@@ -244,8 +518,8 @@ function throwConfetti(count) {
 }
 
 function showEnding() {
-  const { ending, luck } = drawEnding(city, marks, goodCount);
-  const odds = (ODDS[city] || {})[ending.title];
+  const { ending, luck } = drawEnding(life);
+  const odds = (ODDS[life.city] || {})[ending.title];
   const rarity = odds ? rarityOf(odds) : "common";
   const found = rememberEnding(ending.title);
   const fact = factFor(ending);
@@ -258,16 +532,18 @@ function showEnding() {
   card.dataset.rarity = rarity;
   document.getElementById("rarity").textContent =
     { common: "Ending", uncommon: "Uncommon ending", rare: "★ Rare ending ★", legendary: "★ Legendary ending ★" }[rarity];
-  document.getElementById("end-city").textContent = "A cat of " + city;
+  document.getElementById("end-city").textContent = "A cat of " + life.city;
   document.getElementById("ending-title").textContent = ending.title;
   document.getElementById("odds").innerHTML = oddsLine(odds);
+  document.getElementById("end-life").innerHTML =
+    `Lived <strong>${ageAtDeath(life)}</strong> · ${weightOf(life).toFixed(1)} kg · ` +
+    `${life.good} good ${life.good === 1 ? "day" : "days"}, ${life.bad} bad ${life.bad === 1 ? "day" : "days"}`;
   document.getElementById("end-status").innerHTML = statePills();
   document.getElementById("fact").innerHTML = fact
     ? `<b>Real cats</b><br>${fact.text}<br><a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
     : "";
   document.getElementById("found").innerHTML =
-    (found.isNew ? '<span class="new">New ending!</span> · ' : "") +
-    `Endings found in ${city}: ${found.count} / ${STORIES[city].endings.length}`;
+    (found.isNew ? '<span class="new">New ending!</span> · ' : "") + `Endings found in ${life.city}: ${found.count}`;
 
   show("ending");
   if (rarity === "rare") throwConfetti(40);
@@ -277,10 +553,12 @@ function showEnding() {
 
 // Draw the cat everywhere it appears, with a coat for the home screen.
 document.querySelectorAll(".cat-slot").forEach((slot) => (slot.innerHTML = CAT_SVG));
+document.querySelectorAll(".cat-card").forEach(buildCard);
 document.body.style.cssText = coatStyle(COATS[0]);
 
 document.getElementById("born-btn").addEventListener("click", beBorn);
 document.getElementById("again-btn").addEventListener("click", beBorn);
-document.getElementById("start-btn").addEventListener("click", showEvent);
+document.getElementById("start-btn").addEventListener("click", startStep);
+document.getElementById("chapter").addEventListener("click", showEvent);
 document.getElementById("next-btn").addEventListener("click", next);
 document.getElementById("restart-btn").addEventListener("click", beBorn);

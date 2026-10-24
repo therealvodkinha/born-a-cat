@@ -1,4 +1,4 @@
-// The rules of a life: how events, outcomes and endings are drawn.
+// The rules of a life: how events, outcomes, stats and endings work.
 // No drawing or buttons here, so the same rules can be run thousands
 // of times by tools/odds.js to measure how rare each ending is.
 
@@ -6,40 +6,214 @@ function pick(list, rng = Math.random) {
   return list[Math.floor(rng() * list.length)];
 }
 
-// An event, choice outcome or ending can only happen if its marks allow it.
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+// The steps of a life, in order: [{ chapter, chapterIndex, age, kg, cm, risk }].
+const STEPS = LIFE.flatMap((chapter, chapterIndex) =>
+  chapter.steps.map((s) => ({ ...s, chapter, chapterIndex }))
+);
+
+// What an outcome does to the cat when the story doesn't say.
+const DEFAULT_FX = {
+  good: { happy: 6 },
+  bad: { happy: -6, health: -5 },
+};
+
+function newLife(city, coat, rng = Math.random) {
+  return {
+    city,
+    coat,            // id of the coat, from COATS in art.js
+    trait: pick(TRAITS, rng),
+    step: 0,
+    stats: { ...START_STATS },
+    fed: 0,          // -4 (starving) to +4 (fat and happy); fades a little each step
+    build: 0.9 + rng() * 0.2, // born small or big
+    growth: 0,       // extra size from eating well while young
+    marks: new Set(),
+    seen: new Set(), // events already lived
+    good: 0,
+    bad: 0,
+    death: null,     // null, "hurt" (health reached 0) or "age"
+  };
+}
+
+// An event or ending can only happen if its marks allow it.
 function allowed(item, marks) {
   if (item.needs && !marks.has(item.needs)) return false;
   if (item.notIf && marks.has(item.notIf)) return false;
   return true;
 }
 
-function drawEvent(stage, marks, rng = Math.random) {
-  const possible = stage.events.filter((e) => allowed(e, marks));
+function stepOf(life) {
+  return STEPS[life.step];
+}
+
+// At the start of each step, the cat grows or ages, and gets hungry.
+function beginStep(life) {
+  const step = stepOf(life);
+  const fx = { ...(step.chapter.each || {}) };
+  if (life.fed <= -3) fx.health = (fx.health || 0) - 8;
+  addStats(life, fx);
+  life.fed -= Math.sign(life.fed);
+}
+
+function drawEvent(life, rng = Math.random) {
+  const events = STORIES[life.city].chapters[stepOf(life).chapter.name];
+  const possible = events.filter((e) => allowed(e, life.marks) && !life.seen.has(e));
   // Follow-ups (events that need a mark) are favoured when they can happen.
   const followUps = possible.filter((e) => e.needs);
-  return followUps.length && rng() < 0.7 ? pick(followUps, rng) : pick(possible, rng);
+  const event = followUps.length && rng() < 0.7 ? pick(followUps, rng) : pick(possible, rng);
+  life.seen.add(event);
+  return event;
 }
 
-function rollChoice(choice, trait, rng = Math.random) {
-  const bonus = (choice.bonus && choice.bonus[trait.id]) || 0;
-  const chance = Math.min(0.95, Math.max(0.05, choice.chance + bonus));
-  return rng() < chance;
+// Does a modifier (see "mods" in stories.js) apply to this cat right now?
+function modApplies(mod, life) {
+  if (!allowed(mod, life.marks)) return false;
+  if (mod.coat && mod.coat !== life.coat) return false;
+  if (mod.cond && mod.cond !== conditionOf(life)) return false;
+  return true;
 }
 
-function drawEnding(city, marks, goodCount, rng = Math.random) {
-  const luck = goodCount * 2 >= STORIES[city].stages.length ? "lucky" : "unlucky";
-  const endings = STORIES[city].endings.filter((e) => allowed(e, marks) && (!e.luck || e.luck === luck));
+const TRAIT_NAMES = { brave: "Brave", shy: "Shy", curious: "Curious", clever: "Clever" };
+
+// How likely a choice is to go well for THIS cat, and why.
+// "skill" is the bonus from the gesture (see GESTURES), 0 if none.
+// Returns { chance, factors: [{ label, delta }], mods: [the mods that apply] }.
+function chanceOf(choice, life, skill = 0) {
+  const factors = [];
+  const add = (label, delta) => {
+    if (delta) factors.push({ label, delta });
+  };
+  add(TRAIT_NAMES[life.trait.id], (choice.bonus && choice.bonus[life.trait.id]) || 0);
+  if (choice.stat) {
+    const v = life.stats[choice.stat];
+    const delta = Math.round(((v - 50) / 250) * 100) / 100;
+    const name = choice.stat === "strength" ? ["Strong", "Not strong yet"] : ["Healthy", "Sick"];
+    add(delta >= 0 ? name[0] : name[1], delta);
+  }
+  // A limping cat is slower at anything physical. A weak cat too.
+  const physical = choice.stat === "strength" || choice.gesture === "run" || choice.gesture === "pounce";
+  if (physical && life.marks.has("limp")) add(MARKS.limp.label, -0.1);
+  if (physical && conditionOf(life) === "weak") add(CONDITIONS.weak.label, -0.1);
+  const mods = (choice.mods || []).filter((m) => modApplies(m, life));
+  for (const m of mods) add(m.why || "", m.chance || 0);
+  add(skill > 0 ? "Good timing" : "Bad timing", skill);
+
+  const total = factors.reduce((sum, f) => sum + f.delta, choice.chance);
+  return { chance: clamp(total, 0.05, 0.95), factors, mods };
+}
+
+// Rolls the dice. Returns { wentWell, factors, text }: the text can change
+// with the cat's past, coat or condition (see "mods").
+function rollChoice(choice, life, skill = 0, rng = Math.random) {
+  const { chance, factors, mods } = chanceOf(choice, life, skill);
+  const wentWell = rng() < chance;
+  const key = wentWell ? "good" : "bad";
+  const special = mods.find((m) => m[key]);
+  return { wentWell, factors, text: special ? special[key] : choice[key] };
+}
+
+// The gestures some choices ask for, instead of a simple tap.
+// In tools/odds.js, players are assumed to be average at them.
+const GESTURES = {
+  pounce: { hint: "Tap when the paw is in the gold zone" },
+  hold: { hint: "Hold still. Keep your finger down" },
+  run: { hint: "Tap as fast as you can" },
+};
+
+// What an average player gets from a gesture (used by tools/odds.js).
+function averageSkill(rng = Math.random) {
+  const r = rng();
+  return r < 0.35 ? 0.2 : r < 0.7 ? 0.05 : -0.1;
+}
+
+function addStats(life, fx) {
+  for (const key of ["health", "happy", "strength"]) {
+    if (fx[key]) life.stats[key] = clamp(life.stats[key] + fx[key], 0, 100);
+  }
+  if (fx.food) {
+    life.fed = clamp(life.fed + fx.food, -4, 4);
+    if (stepOf(life).chapterIndex <= 2) life.growth = clamp(life.growth + fx.food * 0.012, -0.08, 0.08);
+  }
+}
+
+// Applies what happened. Returns what changed, to show it on screen.
+function applyOutcome(life, choice, wentWell) {
+  const before = { ...life.stats, kg: weightOf(life) };
+  const fx = { ...DEFAULT_FX[wentWell ? "good" : "bad"], ...(wentWell ? choice.goodFx : choice.badFx) };
+  addStats(life, fx);
+  if (wentWell) life.good++;
+  else life.bad++;
+
+  const mark = wentWell ? choice.goodMark : choice.badMark;
+  const isNew = !!mark && !life.marks.has(mark);
+  if (mark) life.marks.add(mark);
+  if (life.stats.health <= 0) life.death = "hurt";
+
+  const change = {};
+  for (const key of ["health", "happy", "strength"]) change[key] = life.stats[key] - before[key];
+  change.kg = +(weightOf(life) - before.kg).toFixed(1);
+  return { change, mark: isNew ? mark : null };
+}
+
+// After each step: old cats may die in their sleep. Returns true if the life goes on.
+function endStep(life, rng = Math.random) {
+  if (life.death) return false;
+  const step = stepOf(life);
+  if (step.risk) {
+    let risk = step.risk * (1.6 - life.stats.health / 100);
+    if (life.marks.has("home")) risk *= 0.8;
+    if (step.risk >= 1 || rng() < risk) {
+      life.death = "age";
+      return false;
+    }
+  }
+  life.step++;
+  return true;
+}
+
+// How the cat's life ends.
+//   when: "early"   died before growing up (Newborn, Kitten)
+//         "cut"     died hurt or sick, later in life
+//         "ancient" lived through the very last step
+//         (none)    died of old age
+function drawEnding(life, rng = Math.random) {
+  const step = stepOf(life);
+  let when = null;
+  // Health running out in old age is just old age.
+  if (life.death === "hurt" && step.chapterIndex === LIFE.length - 1) life.death = "age";
+  if (life.death === "hurt") when = step.chapterIndex <= 1 ? "early" : "cut";
+  else if (life.step === STEPS.length - 1) when = "ancient";
+
+  const endings = STORIES[life.city].endings.filter((e) => (e.when || null) === when && allowed(e, life.marks));
   // Endings with conditions win over the plain ones.
-  const special = endings.filter((e) => e.needs || e.luck);
-  return { ending: pick(special.length ? special : endings, rng), luck };
+  const special = endings.filter((e) => e.needs || e.mood);
+  const moodOk = special.filter((e) => !e.mood || (e.mood === "sad") === (life.stats.happy < 35));
+  const ending = pick(moodOk.length ? moodOk : endings.filter((e) => !e.needs && !e.mood), rng);
+  return { ending, luck: when === "early" || when === "cut" || life.stats.happy < 35 ? "unlucky" : "lucky" };
 }
 
-// How the cat is doing, from how its life has gone so far.
-function conditionOf(goodCount, badCount) {
-  const score = goodCount - badCount;
-  if (score >= 2) return "strong";
-  if (score <= -2) return "weak";
+// How the cat looks, from its stats.
+function conditionOf(life) {
+  const { health, happy } = life.stats;
+  if (health <= 30) return "weak";
+  if (health >= 75 && happy >= 60) return "strong";
   return "ok";
+}
+
+function weightOf(life) {
+  const step = stepOf(life);
+  return +(step.kg * life.build * (1 + life.growth) * (1 + 0.06 * life.fed)).toFixed(1);
+}
+
+function sizeOf(life) {
+  return Math.round(stepOf(life).cm * life.build * (1 + life.growth));
+}
+
+// How old the cat was when it died, in words.
+function ageAtDeath(life) {
+  return stepOf(life).age;
 }
 
 // How rare an ending is, from its odds (0 to 1).
@@ -49,4 +223,3 @@ function rarityOf(odds) {
   if (odds < 0.25) return "uncommon";
   return "common";
 }
-

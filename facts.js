@@ -1,7 +1,8 @@
-// Real facts about cats, shown in small on the ending card.
-// Each one has its source, so anyone can check it.
-// An ending shows its own fact if it has one (ENDING_FACTS, by title),
-// otherwise a random fact of its city, otherwise a random general fact.
+// Real facts about cats, with their source, so anyone can check them.
+// Shown in small under an outcome when its event has "fact" (stories.js),
+// and on the ending card: an ending shows its own fact if it has one
+// ("fact" in the ending, or ENDING_FACTS by title), otherwise a random fact
+// of its city, otherwise a random general fact.
 
 const FACTS = {
   streetKittens: {
@@ -44,6 +45,61 @@ const FACTS = {
     source: "Ministry of the Environment, Japan",
     url: "https://www.env.go.jp/nature/dobutsu/aigo/2_data/statistics/dog-cat.html",
   },
+  falls: {
+    text: "Cats turn in the air to land on their feet. In a New York study of 132 cats that fell from buildings, 90% survived.",
+    source: "Animal Medical Center, New York",
+    url: "https://www.amcny.org/pet_health_library/high-rise-syndrome-in-cats",
+  },
+  lapping: {
+    text: "Cats drink by touching the water with just the tip of the tongue, pulling up a little column, and biting it. About four times a second.",
+    source: "Reis, Jung, Aristoff & Stocker, MIT, Science 2010",
+    url: "https://thetech.com/2010/11/12/catlapp-v130-n53",
+  },
+  eartip: {
+    text: "A street cat with the tip of one ear cut off has been neutered and vaccinated. The cut is made under anaesthesia, so other people know not to trap it again.",
+    source: "Alley Cat Allies",
+    url: "https://www.alleycat.org/community-cat-care/why-the-eartip-on-outdoor-cats/",
+  },
+  islam: {
+    text: "Cats are welcome in mosques in many Muslim countries. The Prophet’s companion Abu Hurayra was nicknamed “father of the kitten”.",
+    source: "Wikipedia, Islam and cats",
+    url: "https://en.wikipedia.org/wiki/Islam_and_cats",
+  },
+  sweet: {
+    text: "Cats can’t taste sweet things. The gene for the sweet taste receptor is broken in all cats, even lions and tigers.",
+    source: "Li et al., PLoS Genetics 2005",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC1183522/",
+  },
+  names: {
+    text: "Cats recognise their own name, and tell it apart from other words. They mostly answer by moving their ears or head.",
+    source: "Saito et al., University of Tokyo, Scientific Reports 2019",
+    url: "https://www.u-tokyo.ac.jp/focus/en/press/z0508_00040.html",
+  },
+  voices: {
+    text: "Cats can tell their owner’s voice from a stranger’s. They answer with their ears and head, not by coming. They heard you.",
+    source: "Saito & Shinozuka, University of Tokyo, Animal Cognition 2013",
+    url: "https://www.u-tokyo.ac.jp/focus/en/articles/a_00138.html",
+  },
+  blink: {
+    text: "A slow blink is a cat smile. Cats blink slowly back at people who do it to them, and are more likely to come closer.",
+    source: "Humphrey et al., University of Sussex, Scientific Reports 2020",
+    url: "https://www.sussex.ac.uk/news/research?id=53423",
+  },
+  gotokuji: {
+    text: "Gōtoku-ji temple in Tokyo claims the beckoning cat. A lord followed a temple cat’s waving paw just before lightning struck where he stood.",
+    source: "Wikipedia, Gōtoku-ji",
+    url: "https://en.wikipedia.org/wiki/G%C5%8Dtoku-ji",
+  },
+  nekomata: {
+    text: "In Japanese folklore, a cat that lives very long grows a forked tail and becomes a nekomata. The oldest real cat on record, Creme Puff, lived to 38.",
+    source: "Wikipedia, Nekomata · Guinness World Records",
+    url: "https://en.wikipedia.org/wiki/Nekomata",
+  },
+  oldest: {
+    text: "The oldest cat on record, Creme Puff, lived 38 years and 3 days, in Austin, Texas.",
+    source: "Guinness World Records",
+    url: "https://guinnessworldrecords.com/world-records/oldest-cat-ever",
+  },
 };
 
 const ENDING_FACTS = {
@@ -54,6 +110,11 @@ const ENDING_FACTS = {
   "A long line of cats": "streetKittens",
   "Eyes of two colours": "streetKittens",
   "The night shift cat": "sleep",
+  "Too small for Rabat": "streetKittens",
+  "Like the cherry blossoms": "streetKittens",
+  "Older than the tram": "oldest",
+  "A cat nobody kept": "streetLife",
+  "Star of the alley": "japanShelters",
 };
 
 const CITY_FACTS = {

@@ -104,7 +104,7 @@ body::before {
   animation: enter 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-.hidden { display: none; }
+.hidden, .choices.hidden, .gesture.hidden { display: none; }
 
 @keyframes enter {
   from { opacity: 0; transform: translateY(14px); }
@@ -405,8 +405,11 @@ body[data-cond="strong"] .cat .acc-sparkles path:nth-child(3) { animation-delay:
 /* a weak cat is thinner and greyer */
 .cat > .body { transform-origin: 60px 108px; transition: transform 0.6s ease; }
 body[data-cond="weak"] .cat { filter: saturate(0.35) brightness(0.96); }
-body[data-cond="weak"] .cat > .body { transform: scaleX(0.88); }
-body[data-cond="strong"] .cat > .body { transform: scaleX(1.06); }
+.cat > .body { transform: scaleX(var(--fat, 1)); }
+
+/* the drawing grows with the cat (see showState in game.js) */
+.cat { scale: var(--size, 1); transform-origin: 50% 100%; transition: scale 1.2s cubic-bezier(0.3, 1.4, 0.5, 1); }
+#home .cat { scale: 1; }
 
 /* The cat's state, as little stamps: what it has, what happened to it. */
 .status { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 1.3em; }
@@ -572,8 +575,9 @@ body[data-city="Tokyo"] .end-card[data-rarity="legendary"] {
    Life progress: one paw per stage
    ============================================================ */
 .life { display: flex; align-items: center; justify-content: space-between; gap: 1em; margin-bottom: 1.4em; }
-.paws { display: flex; gap: 6px; }
-.paws svg { width: 18px; height: 18px; fill: var(--muted); opacity: 0.3; }
+.life .label { white-space: nowrap; }
+.paws { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px; }
+.paws svg { width: 14px; height: 14px; fill: var(--muted); opacity: 0.3; }
 .paws svg.done { fill: var(--ink); opacity: 0.85; }
 .paws svg.now { fill: var(--accent); opacity: 1; animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { transform: scale(1.25) rotate(-10deg); } }
@@ -597,6 +601,125 @@ body[data-mood="sad"] #result .mini-cat .cat { animation: shiver 0.5s 0.15s ease
 /* The sun or moon behind the cat brightens on a good outcome. */
 body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
 @keyframes flare { 30% { transform: scale(1.18); filter: brightness(1.15); } }
+
+/* ============================================================
+   A new chapter of life: its name, big, and the cat's age.
+   ============================================================ */
+#chapter { cursor: pointer; }
+#chapter h2 { animation: drop 0.7s 0.1s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+#chapter .label { font-size: 1rem; animation: enter 0.5s 0.4s both; }
+.tap-hint { font-size: 0.85rem; color: var(--muted); font-style: italic; animation: enter 0.5s 1s both; }
+
+/* ============================================================
+   The cat card: the cat, and its stats as small gauges.
+   ============================================================ */
+.cat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 6px 12px 8px 14px;
+  box-shadow: 3px 3px 0 var(--ink);
+  padding: 8px 14px 8px 6px;
+  margin: 0 0 1.2em;
+  rotate: -0.4deg;
+}
+.cat-card .mini-cat { flex: 0 0 84px; width: 84px; height: 84px; margin: 0; display: flex; align-items: flex-end; }
+.cat-card .mini-cat .cat { width: 100%; }
+.gauges { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.gauge { display: grid; grid-template-columns: 5.6em 1fr 2.2em; align-items: center; gap: 6px; }
+.g-name { font-family: var(--title); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: left; }
+.g-bar { height: 9px; border: 1.5px solid var(--ink); border-radius: 99px; overflow: hidden; background: transparent; }
+.g-bar i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width 0.9s cubic-bezier(0.3, 1.2, 0.5, 1), background-color 0.4s; }
+.gauge[data-k="happy"] .g-bar i { background: #e0565b; }
+.gauge[data-k="strength"] .g-bar i { background: #e3913f; }
+.gauge.low .g-bar i { background: var(--muted); }
+.gauge.low .g-bar { animation: warn 1s ease-in-out infinite; }
+@keyframes warn { 50% { border-color: #c9524f; } }
+.g-delta { font-family: var(--title); font-size: 0.85rem; text-align: right; opacity: 0; }
+.g-delta.up, .g-delta.down { animation: float-up 1.6s 0.3s ease-out both; }
+.g-delta.up { color: var(--good); }
+.g-delta.down { color: #c9524f; }
+@keyframes float-up { 0% { opacity: 0; transform: translateY(8px) scale(0.6); } 20% { opacity: 1; transform: none scale(1.25); } 35% { transform: scale(1); } 100% { opacity: 1; } }
+.g-body { font-family: var(--title); font-size: 0.82rem; color: var(--muted); text-align: left; margin: 2px 0 0; }
+.g-body .kg-delta { margin-left: 0.5em; }
+
+/* hearts flying out of the cat when it's happy */
+.mini-cat .hearts { position: absolute; inset: 0; pointer-events: none; }
+.mini-cat .hearts i {
+  position: absolute;
+  bottom: 40%;
+  font-style: normal;
+  color: #e0565b;
+  font-size: 1.1rem;
+  animation: heart 1.4s ease-out both;
+}
+@keyframes heart { from { opacity: 0; transform: translate(0, 0) scale(0.4); } 20% { opacity: 1; } to { opacity: 0; transform: translate(var(--drift), -70px) scale(1.2); } }
+
+/* hurt: the screen shakes and flashes red */
+body.hit .screen { animation: shake 0.5s ease-in-out; }
+body.hit::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  box-shadow: inset 0 0 120px rgba(201, 82, 79, 0.75);
+  animation: flash 0.7s ease-out both;
+}
+@keyframes shake { 15%, 55% { transform: translateX(-8px) rotate(-0.5deg); } 35%, 75% { transform: translateX(8px) rotate(0.5deg); } }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+
+/* why it went like that */
+.factors { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: -0.4em 0 1em; }
+.factors:empty { display: none; }
+.factor { font-family: var(--title); font-size: 0.75rem; font-weight: 600; padding: 0.2em 0.6em; border-radius: 4px; animation: pop-in 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+.factor:nth-child(2) { animation-delay: 0.08s; }
+.factor:nth-child(3) { animation-delay: 0.16s; }
+.factor:nth-child(n+4) { animation-delay: 0.24s; }
+.factor.plus { background: var(--good); color: var(--card); }
+.factor.minus { border: 1.5px dashed var(--muted); color: var(--muted); }
+
+/* a true fact under the outcome */
+.event-fact { font-size: 0.82rem; line-height: 1.45; text-align: left; color: var(--muted); border-left: 3px solid var(--accent); padding-left: 0.8em; margin: 1.1em 0 0; }
+.event-fact:empty { display: none; }
+.event-fact b { font-family: var(--title); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.7rem; color: var(--accent); margin-right: 0.3em; }
+.event-fact a { color: inherit; font-size: 0.75rem; }
+
+/* choices that ask for a gesture get a small sign */
+.choices button[data-gesture]::after { content: "  ✦"; color: var(--accent); }
+
+.end-life { font-family: var(--title); font-size: 0.9rem; color: var(--muted); margin: -0.6em 0 1em; }
+.end-life strong { color: var(--ink); }
+
+/* ============================================================
+   Gestures (see startGesture in game.js)
+   ============================================================ */
+.gesture { margin-top: 1.6em; display: flex; flex-direction: column; align-items: center; gap: 1em; animation: enter 0.35s both; }
+.g-hint { font-family: var(--title); font-weight: 600; margin: 0; }
+.track { position: relative; width: 100%; height: 34px; border: 2px solid var(--ink); border-radius: 99px; background: var(--card); }
+.track .zone { position: absolute; top: 3px; bottom: 3px; background: #f0bf3c; border-radius: 99px; animation: breathe 1s ease-in-out infinite; }
+.track .marker { position: absolute; top: 50%; width: 30px; height: 30px; translate: -50% -50%; }
+.track .marker svg { width: 100%; height: 100%; fill: var(--ink); }
+.track.run { overflow: visible; }
+.track .run-fill { position: absolute; left: 3px; top: 3px; bottom: 3px; width: 0; background: var(--good); border-radius: 99px; transition: width 0.12s; }
+.track.run .marker { left: 0; transition: left 0.12s; }
+.g-btn { min-width: 60%; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.g-btn.bump { animation: bump 0.12s; }
+@keyframes bump { 50% { transform: scale(0.94); } }
+.hold-btn { position: relative; width: 120px; height: 120px; min-width: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; }
+.hold-btn .ring { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); rotate: -90deg; }
+.hold-btn .ring circle { fill: none; stroke: var(--accent-ink); stroke-opacity: 0.3; stroke-width: 8; }
+.hold-btn .ring .fill { stroke-opacity: 1; stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round; }
+.hold-btn span { position: relative; }
+.hold-btn.holding { transform: translate(3px, 3px) scale(0.97); box-shadow: 1px 1px 0 var(--ink); animation: tremble 0.25s linear infinite; }
+@keyframes tremble { 25% { rotate: -1deg; } 75% { rotate: 1deg; } }
+.g-verdict { font-family: var(--title); font-size: 1.6rem; font-weight: 800; margin: 0; min-height: 1.2em; }
+.gesture.judged .g-verdict { animation: stamp 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.gesture.great .g-verdict { color: var(--good); }
+.gesture.poor .g-verdict { color: var(--muted); }
+.gesture.judged .g-btn { pointer-events: none; opacity: 0.6; }
 
 /* People who asked their phone for less motion get none. */
 @media (prefers-reduced-motion: reduce) {
