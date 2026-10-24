@@ -60,7 +60,7 @@ const GAUGES = [
 function buildCard(card) {
   card.innerHTML =
     `<div class="mini-cat cat-slot">${CAT_SVG}<div class="hearts"></div></div>` +
-    `<div class="gauges">` +
+    `<div class="gauges"><p class="card-name"></p>` +
     GAUGES.map(
       (g) =>
         `<div class="gauge" data-k="${g.key}"><span class="g-name">${g.name}</span>` +
@@ -73,6 +73,7 @@ function buildCard(card) {
 // Updates a card. With "change", the gauges first show the old values,
 // then slide to the new ones, with the difference popping up.
 function updateCard(card, change) {
+  card.querySelector(".card-name").textContent = life.name;
   const set = () => {
     for (const g of GAUGES) {
       const v = life.stats[g.key];
@@ -201,6 +202,7 @@ document.addEventListener("pointerdown", (e) => {
 function beBorn() {
   const coat = pick(COATS);
   life = newLife(pick(Object.keys(STORIES)), coat.id);
+  [life.name, life.nameMeaning] = nameFor(life.city, coat.id);
 
   document.body.style.cssText = coatStyle(coat);
   setLook("coat", coat.id);
@@ -227,6 +229,8 @@ function beBorn() {
   document.getElementById("city-line").textContent = STORIES[life.city].line;
   document.getElementById("coat-line").textContent = COAT_LINES[coat.id] || "";
   document.getElementById("trait-line").textContent = life.trait.line;
+  document.getElementById("name-line").innerHTML = `They call you <strong>${life.name}</strong>`;
+  document.getElementById("name-meaning").textContent = life.nameMeaning;
   show("birth");
 }
 
@@ -532,7 +536,7 @@ function showEnding() {
   card.dataset.rarity = rarity;
   document.getElementById("rarity").textContent =
     { common: "Ending", uncommon: "Uncommon ending", rare: "★ Rare ending ★", legendary: "★ Legendary ending ★" }[rarity];
-  document.getElementById("end-city").textContent = "A cat of " + life.city;
+  document.getElementById("end-city").textContent = `${life.name}, born in ${life.city}`;
   document.getElementById("ending-title").textContent = ending.title;
   document.getElementById("odds").innerHTML = oddsLine(odds);
   document.getElementById("end-life").innerHTML =
@@ -544,6 +548,18 @@ function showEnding() {
     : "";
   document.getElementById("found").innerHTML =
     (found.isNew ? '<span class="new">New ending!</span> · ' : "") + `Endings found in ${life.city}: ${found.count}`;
+
+  // what goes on the picture to share (see share.js)
+  showEnding.card = {
+    name: life.name,
+    city: life.city,
+    title: ending.title,
+    rarity,
+    odds: oddsLine(odds).replace(/<[^>]+>/g, ""),
+    lived: `Lived ${ageAtDeath(life)} · ${weightOf(life).toFixed(1)} kg`,
+    marks: [...life.marks].map((m) => MARKS[m]).filter(Boolean),
+  };
+  document.getElementById("share-note").textContent = "";
 
   show("ending");
   if (rarity === "rare") throwConfetti(40);
@@ -562,3 +578,15 @@ document.getElementById("start-btn").addEventListener("click", startStep);
 document.getElementById("chapter").addEventListener("click", showEvent);
 document.getElementById("next-btn").addEventListener("click", next);
 document.getElementById("restart-btn").addEventListener("click", beBorn);
+document.getElementById("share-btn").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  const note = document.getElementById("share-note");
+  btn.disabled = true;
+  note.textContent = "Drawing your card…";
+  try {
+    note.textContent = await shareCard(showEnding.card);
+  } catch (err) {
+    note.textContent = "Sorry, the picture could not be made on this browser.";
+  }
+  btn.disabled = false;
+});

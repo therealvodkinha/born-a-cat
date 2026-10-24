@@ -33,6 +33,8 @@
     <p class="label">You were born in</p>
     <h2 id="city-name"></h2>
     <p id="city-line" class="tagline"></p>
+    <p class="cat-name" id="name-line"></p>
+    <p id="name-meaning" class="tagline trait"></p>
     <p id="coat-line" class="tagline trait"></p>
     <p id="trait-line" class="tagline trait"></p>
     <div class="actions">
@@ -90,8 +92,10 @@
       <p class="fact after-text" id="fact"></p>
     </article>
     <p class="found after-text" id="found"></p>
-    <div class="actions">
-      <button id="restart-btn" type="button">Be born again</button>
+    <div class="actions after-text">
+      <button id="share-btn" type="button">Share my cat</button>
+      <p class="share-note" id="share-note" role="status"></p>
+      <button id="restart-btn" type="button" class="secondary">Be born again</button>
     </div>
   </main>
   <div class="confetti" id="confetti" aria-hidden="true"></div>
@@ -99,8 +103,10 @@
   <script src="art.js"></script>
   <script src="stories.js"></script>
   <script src="facts.js"></script>
+  <script src="names.js"></script>
   <script src="odds.js"></script>
   <script src="rules.js"></script>
+  <script src="share.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
