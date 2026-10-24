@@ -36,6 +36,7 @@ function showState() {
   setLook("age", chapter <= 1 ? "kitten" : chapter === LIFE.length - 1 ? "old" : "adult");
   // the drawing grows with the cat, and gets fatter or thinner with food
   const size = 0.45 + 0.55 * Math.min(1.1, sizeOf(life) / 46);
+  SOUND.size = size;
   document.body.style.setProperty("--size", size.toFixed(3));
   document.body.style.setProperty("--fat", (1 + 0.07 * life.fed).toFixed(3));
 }
@@ -236,6 +237,9 @@ function beBorn() {
   document.getElementById("name-line").innerHTML = `They call you <strong>${life.name}</strong>`;
   document.getElementById("name-meaning").textContent = life.nameMeaning;
   show("birth");
+  SOUND.music(life.city);
+  SOUND.mood("day");
+  SOUND.play("meow", 0.6);
 }
 
 // A new step: the cat grows, and walks across the screen while its age
@@ -262,6 +266,9 @@ function startStep() {
   document.querySelector("#time .walker").innerHTML = WALK_SVG; // restarts the walk
   screen.classList.add("waiting");
   show("time");
+  SOUND.mood("day");
+  SOUND.play("steps", 0.1);
+  if (newChapter) SOUND.play("chapter", calm ? 0.6 : 2.6);
 
   const walk = calm ? 600 : 2600;
   clearTimeout(startStep.timer);
@@ -323,6 +330,7 @@ function startGesture(choice) {
   panel.dataset.kind = choice.gesture;
   const done = (skill, word) => {
     panel.querySelector(".g-verdict").textContent = word;
+    if (skill > 0.1) SOUND.play("perfect");
     panel.classList.add("judged", skill > 0.1 ? "great" : skill > 0 ? "fine" : "poor");
     setTimeout(() => {
       panel.className = "gesture hidden";
@@ -492,6 +500,14 @@ function choose(choice, skill) {
   else card.querySelector(".hearts").replaceChildren();
   if (change.health <= -20) hit();
 
+  // what you hear: the outcome, then the cat itself
+  if (change.health <= -20) SOUND.play("hit");
+  else SOUND.play(wentWell ? "good" : "bad");
+  if (/hiss/i.test(choice.label)) SOUND.play("hiss", 0.25);
+  else if (change.happy >= 10) SOUND.play("purr", 0.4);
+  else if (wentWell && Math.random() < 0.35) SOUND.play("meow", 0.4);
+  if (mark) SOUND.play("pop", 0.6);
+
   const nextBtn = document.getElementById("next-btn");
   nextBtn.textContent = life.death ? "…" : "Continue";
   show("result");
@@ -528,6 +544,9 @@ function showFarewell() {
   const screen = screens.farewell;
   screen.classList.add("waiting");
   show("farewell");
+  SOUND.mood("night");
+  SOUND.play("purr", 0.5);
+  SOUND.play("farewell", 3);
   clearTimeout(showFarewell.timer);
   showFarewell.timer = setTimeout(() => screen.classList.remove("waiting"), calm ? 300 : 4200);
 }
@@ -618,6 +637,7 @@ function showEnding() {
   document.getElementById("share-note").textContent = "";
 
   show("ending");
+  if (rarity === "rare" || rarity === "legendary") SOUND.play("rare", 0.3);
   if (rarity === "rare") throwConfetti(40);
   if (rarity === "legendary") throwConfetti(90);
   typeText(document.getElementById("ending-text"), ending.text);
@@ -647,3 +667,19 @@ document.getElementById("share-btn").addEventListener("click", async (e) => {
   }
   btn.disabled = false;
 });
+
+// Every button makes a small paper sound. The sound button turns it all off.
+document.addEventListener("click", (e) => {
+  if (e.target.closest("button") && !e.target.closest("#mute-btn")) SOUND.play("click");
+});
+const muteBtn = document.getElementById("mute-btn");
+const showMute = () => {
+  muteBtn.classList.toggle("off", SOUND.muted);
+  muteBtn.setAttribute("aria-label", SOUND.muted ? "Turn sound on" : "Turn sound off");
+};
+muteBtn.addEventListener("click", () => {
+  SOUND.toggle();
+  showMute();
+  if (!SOUND.muted) SOUND.play("meow");
+});
+showMute();
