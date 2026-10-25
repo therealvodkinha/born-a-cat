@@ -168,6 +168,29 @@ h2 { font-size: clamp(2.8rem, 14vw, 4rem); margin: 0.05em 0 0.3em; color: var(--
 .cat-name strong { color: var(--accent); font-size: 1.25em; font-weight: 700; }
 .cat-name + .trait { margin-top: 0.2em; }
 
+/* Where the cat was born: drawn like a lottery, then stamped. */
+.origin { margin: 1.1em 0 0.2em; animation: enter 0.6s 1s both; }
+.origin-stamp {
+  display: inline-block;
+  font-family: var(--title);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.3em 0.9em;
+  border: 3px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent);
+  margin: 0;
+  rotate: -3deg;
+}
+.origin.rolling .origin-stamp { opacity: 0.55; border-style: dashed; }
+.origin.landed .origin-stamp { animation: stamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes stamp { from { transform: scale(1.8); opacity: 0; } }
+.origin-odds { font-family: var(--title); font-size: 0.85rem; color: var(--muted); margin: 0.5em 0 0; min-height: 1.3em; }
+.origin.rolling ~ .origin-line, .origin.rolling ~ #breed-line, .origin.rolling ~ #coat-line, .origin.rolling ~ #trait-line, .origin.rolling ~ .actions { visibility: hidden; }
+.origin-line { font-weight: 600; }
+
 .label {
   font-family: var(--title);
   font-size: 0.8rem;
@@ -492,6 +515,29 @@ body[data-cond="weak"] .cat { filter: saturate(0.35) brightness(0.96); }
 .after-text { animation: enter 0.6s both; }
 .waiting .after-text { visibility: hidden; animation: none; }
 .end-card .status { margin: 1.2em 0 0; }
+
+/* How well the cat did with what it was given (see rewards.js). */
+.journey { margin: 1.3em 0 0; padding: 1em 0 0; border-top: 1.5px dashed var(--muted); }
+.stars { font-size: 2rem; letter-spacing: 0.15em; margin: 0; color: var(--muted); }
+.stars span { display: inline-block; }
+.stars .on { color: var(--accent); animation: pop-in 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
+.stars .on:nth-child(2) { animation-delay: 0.25s; }
+.stars .on:nth-child(3) { animation-delay: 0.5s; }
+.journey-line { font-family: var(--title); font-size: 1.05rem; line-height: 1.45; margin: 0.4em 0 0.3em; }
+.score-line { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.score-line .new { color: var(--good); font-weight: 700; }
+.awards { display: flex; flex-direction: column; gap: 6px; margin: 0.8em 0 0; }
+.awards:empty { display: none; }
+.award {
+  margin: 0;
+  font-size: 0.85rem;
+  padding: 0.5em 0.8em;
+  border: 1.5px solid var(--good);
+  border-radius: 8px;
+  text-align: left;
+  animation: pop-in 0.4s 0.8s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
+}
+.award b { font-family: var(--title); color: var(--good); }
 
 .fact {
   font-size: 0.82rem;

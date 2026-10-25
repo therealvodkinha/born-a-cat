@@ -205,8 +205,8 @@ document.addEventListener("pointerdown", (e) => {
 // A life, step by step.
 // ------------------------------------------------------------
 function beBorn() {
-  const coat = pick(COATS);
-  life = newLife(pick(Object.keys(STORIES)), coat.id);
+  life = newLife(pick(Object.keys(STORIES)));
+  const coat = COATS.find((c) => c.id === life.coat);
   [life.name, life.nameMeaning] = nameFor(life.city, coat.id);
 
   document.body.style.cssText = coatStyle(coat);
@@ -233,7 +233,10 @@ function beBorn() {
     })
   );
   document.getElementById("city-line").textContent = STORIES[life.city].line;
+  document.getElementById("origin-line").textContent = STORIES[life.city].origins[life.origin];
+  document.getElementById("breed-line").textContent = BREEDS[life.breed].line;
   document.getElementById("coat-line").textContent = COAT_LINES[coat.id] || "";
+  rollOrigin();
   document.getElementById("trait-line").textContent = life.trait.line;
   document.getElementById("name-line").innerHTML = `They call you <strong>${life.name}</strong>`;
   document.getElementById("name-meaning").textContent = life.nameMeaning;
@@ -242,6 +245,37 @@ function beBorn() {
   SOUND.mood("day");
   SOUND.play("meow", 0.6);
 }
+
+// Where the cat is born is drawn like a lottery: the stamps flicker, then
+// one lands. A tap lands it at once.
+function rollOrigin() {
+  const box = document.getElementById("origin");
+  const stamp = document.getElementById("origin-stamp");
+  const odds = document.getElementById("origin-odds");
+  const ids = Object.keys(ORIGINS);
+  const land = () => {
+    clearInterval(rollOrigin.timer);
+    clearTimeout(rollOrigin.stop);
+    if (!box.classList.contains("rolling")) return;
+    stamp.textContent = ORIGINS[life.origin].label;
+    const chance = ORIGINS[life.origin].chance;
+    odds.textContent = chance >= 0.5 ? `Like ${Math.round(chance * 100)}% of cats` : `Only ${Math.round(chance * 100)}% of cats start like this`;
+    box.classList.remove("rolling");
+    box.classList.add("landed");
+    SOUND.play(life.origin === "home" ? "perfect" : "pop");
+  };
+  rollOrigin.land = land;
+  box.classList.remove("landed");
+  box.classList.add("rolling");
+  odds.textContent = "";
+  let n = 0;
+  stamp.textContent = ORIGINS[ids[0]].label;
+  rollOrigin.timer = setInterval(() => (stamp.textContent = ORIGINS[ids[++n % ids.length]].label), 110);
+  rollOrigin.stop = setTimeout(land, calm ? 300 : 2200);
+}
+screens.birth.addEventListener("click", (e) => {
+  if (!e.target.closest("button") && rollOrigin.land) rollOrigin.land();
+});
 
 // A new step: the cat grows, and walks across the screen while its age
 // changes. At the start of a new chapter of life, the walk is followed by a
@@ -602,7 +636,8 @@ function rememberEnding(title) {
   try {
     localStorage.setItem("born-a-cat:found", JSON.stringify(found));
   } catch (e) {}
-  return { count: list.length, isNew };
+  const total = Object.values(found).reduce((sum, l) => sum + l.length, 0);
+  return { count: list.length, isNew, total };
 }
 
 function factFor(ending) {
@@ -636,6 +671,7 @@ function showEnding() {
   const odds = (ODDS[life.city] || {})[ending.title];
   const rarity = odds ? rarityOf(odds) : "common";
   const found = rememberEnding(ending.title);
+  const reward = rewardLife(life, ending, found.total);
   const fact = factFor(ending);
 
   setLook("mood", "asleep");
@@ -646,18 +682,32 @@ function showEnding() {
   card.dataset.rarity = rarity;
   document.getElementById("rarity").textContent =
     { common: "Ending", uncommon: "Uncommon ending", rare: "★ Rare ending ★", legendary: "★ Legendary ending ★" }[rarity];
-  document.getElementById("end-city").textContent = `${life.name}, born in ${life.city}`;
+  const kind = (life.breed === "mixed" ? "" : BREEDS[life.breed].label + " ") + ORIGINS[life.origin].label.toLowerCase();
+  document.getElementById("end-city").textContent = `${life.name}, ${kind}, born in ${life.city}`;
   document.getElementById("ending-title").textContent = ending.title;
   document.getElementById("odds").innerHTML = oddsLine(odds);
   document.getElementById("end-life").innerHTML =
     `Lived <strong>${ageAtDeath(life)}</strong> · ${weightOf(life).toFixed(1)} kg · ` +
     `${life.good} good ${life.good === 1 ? "day" : "days"}, ${life.bad} bad ${life.bad === 1 ? "day" : "days"}`;
   document.getElementById("end-status").innerHTML = statePills();
+  document.getElementById("stars").innerHTML = [1, 2, 3]
+    .map((n) => `<span class="${n <= reward.stars ? "on" : ""}">★</span>`)
+    .join("");
+  document.getElementById("stars").setAttribute("aria-label", `${reward.stars} out of 3 stars`);
+  document.getElementById("journey-line").textContent = reward.line;
+  const born = ORIGINS[life.origin].label.toLowerCase();
+  document.getElementById("score-line").innerHTML =
+    `Life score <strong>${reward.score}</strong> · ` +
+    (reward.record ? `<span class="new">New record for a ${born}!</span>` : `Best for a ${born}: ${reward.best}`);
+  document.getElementById("awards").innerHTML = reward.newAwards
+    .map((a) => `<p class="award"><b>New award: ${a.title}</b> · ${a.text}</p>`)
+    .join("");
   document.getElementById("fact").innerHTML = fact
     ? `<b>Real cats</b><br>${fact.text}<br><a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
     : "";
   document.getElementById("found").innerHTML =
-    (found.isNew ? '<span class="new">New ending!</span> · ' : "") + `Endings found in ${life.city}: ${found.count}`;
+    (found.isNew ? '<span class="new">New ending!</span> · ' : "") +
+    `Endings found in ${life.city}: ${found.count} · Awards: ${reward.awardCount}`;
 
   // what goes on the picture to share (see share.js)
   showEnding.card = {
@@ -666,13 +716,14 @@ function showEnding() {
     title: ending.title,
     rarity,
     odds: oddsLine(odds).replace(/<[^>]+>/g, ""),
-    lived: `Lived ${ageAtDeath(life)} · ${weightOf(life).toFixed(1)} kg`,
+    born: `${ORIGINS[life.origin].label.toLowerCase()}, born in ${life.city}`,
+    lived: `${"★".repeat(reward.stars)}${"☆".repeat(3 - reward.stars)} · Lived ${ageAtDeath(life)} · ${weightOf(life).toFixed(1)} kg`,
     marks: [...life.marks].map((m) => MARKS[m]).filter(Boolean),
   };
   document.getElementById("share-note").textContent = "";
 
   show("ending");
-  if (rarity === "rare" || rarity === "legendary") SOUND.play("rare", 0.3);
+  if (rarity === "rare" || rarity === "legendary" || reward.newAwards.length) SOUND.play("rare", 0.3);
   if (rarity === "rare") throwConfetti(40);
   if (rarity === "legendary") throwConfetti(90);
   typeText(document.getElementById("ending-text"), ending.text);

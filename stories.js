@@ -3,7 +3,9 @@
 // ============================================================
 //
 // HOW A GAME WORKS
-// 1. The cat is born in a random city, with a random trait (see TRAITS).
+// 1. The cat is born in a random city, in a random place (see ORIGINS:
+//    the street, a shelter or a home), with a breed (BREEDS), a coat and
+//    a trait (TRAITS). Where it is born changes how the life starts.
 // 2. A life goes through the chapters of LIFE (Newborn, Kitten...).
 //    Each chapter has one or more steps (an age). At each step, ONE event
 //    of that chapter is drawn at random, never the same one twice.
@@ -18,6 +20,8 @@
 //   text    : what happens. Short sentences.
 //   needs   : (optional) only possible if the cat has this mark
 //   notIf   : (optional) impossible if the cat has this mark
+//   origin  : (optional) only for cats born there: "street", "shelter" or "home".
+//             These events come first when they can happen.
 //   fact    : (optional) a real cat fact from facts.js, shown under the outcome
 //   choices : the buttons (2 or 3)
 //
@@ -33,6 +37,8 @@
 //              A list of { needs / notIf / coat / cond, chance, why, good, bad }:
 //                needs, notIf : a mark the cat has, or doesn't have
 //                coat         : "ginger", "black", "grey tabby", "white", "calico", "tuxedo"
+//                breed        : "mixed", "persian", "mainecoon", "bobtail" (see BREEDS)
+//                origin       : "street", "shelter", "home"
 //                cond         : "strong", "ok" or "weak" (how the cat is doing)
 //                chance       : added to the chance, e.g. 0.2 or -0.15
 //                why          : shown to the player, e.g. "Battle scars"
@@ -147,6 +153,86 @@ const COAT_LINES = {
   tuxedo: "Black, with a white shirt. You look dressed for a wedding at all times.",
 };
 
+// Where the cat is born. This is drawn first, before anything else.
+//   chance : how often (they add up to 1)
+//   label  : the stamp on the birth screen
+//   stats  : added to START_STATS
+//   marks  : marks the cat starts with
+//   breeds : how likely each breed is, for a cat born here (see BREEDS)
+// What the birth screen says about each place is in each city (“origins”).
+const ORIGINS = {
+  street: {
+    chance: 0.6,
+    label: "Street cat",
+    stats: { strength: 4 },
+    marks: [],
+    breeds: { mixed: 96, persian: 2, bobtail: 2 },
+  },
+  shelter: {
+    chance: 0.25,
+    label: "Shelter cat",
+    stats: { health: 10, happy: -5 },
+    marks: [],
+    breeds: { mixed: 82, persian: 8, mainecoon: 5, bobtail: 5 },
+  },
+  home: {
+    chance: 0.15,
+    label: "House cat",
+    stats: { health: 15, happy: 10, strength: -4 },
+    marks: ["home"],
+    breeds: { mixed: 45, persian: 25, mainecoon: 20, bobtail: 10 },
+  },
+};
+
+// Breeds. Most cats in the world have none (“mixed”).
+//   coats    : (optional) the coats this breed can have (see COATS in art.js)
+//   cities   : (optional) only born in these cities
+//   stats    : added to the starting stats
+//   build    : (optional) how big the cat grows (1 = normal)
+//   physical : chance added to physical choices (pounce, run, strength)
+//   charm    : chance added to choices that win a human (a home, a friend)
+const BREEDS = {
+  mixed: {
+    label: "No breed",
+    line: "No breed. A bit of everything, like most cats on Earth. Tougher for it.",
+    stats: { health: 5 },
+    physical: 0,
+    charm: 0,
+  },
+  persian: {
+    label: "Persian",
+    coats: ["white", "black", "ginger", "calico"],
+    line: "Persian. Long fur, flat face, the look of a disappointed duchess. That short nose makes running hard work.",
+    stats: { health: -5, happy: 5 },
+    physical: -0.1,
+    physicalWhy: "Flat face, short breath",
+    charm: 0.15,
+    charmWhy: "Pretty face",
+  },
+  mainecoon: {
+    label: "Maine Coon",
+    coats: ["grey tabby", "ginger", "black", "tuxedo"],
+    line: "Maine Coon, the biggest breed of house cat. Paws like slippers, tufts on your ears. You will be enormous.",
+    stats: { strength: 8 },
+    build: 1.3,
+    physical: 0.1,
+    physicalWhy: "Big paws",
+    charm: 0.05,
+    charmWhy: "Fluffy",
+  },
+  bobtail: {
+    label: "Japanese Bobtail",
+    cities: ["Tokyo"],
+    coats: ["calico", "white", "black", "tuxedo"],
+    line: "Japanese Bobtail. Your tail is a little pom-pom. The lucky cat waving in every shop window looks like you.",
+    stats: { strength: 3 },
+    physical: 0.05,
+    physicalWhy: "Quick on your feet",
+    charm: 0.1,
+    charmWhy: "Lucky cat",
+  },
+};
+
 // What each mark looks like on screen. "good: true" = something the cat won.
 const MARKS = {
   baker: { label: "The baker’s cat", good: true },
@@ -177,10 +263,112 @@ const STORIES = {
   // ==========================================================
   Rabat: {
     line: "Warm stones, the smell of the sea, and a hundred cats who all think they own the place.",
+    origins: {
+      street: "In a cardboard box behind a bakery. Your mother is somewhere. Probably.",
+      shelter: "In a shelter on the edge of the city. Clean blankets, forty dogs next door, and a volunteer who sings badly.",
+      home: "In a laundry basket, in a house with a garden. You have a family before you have teeth.",
+    },
     chapters: {
       // --------------------------------------------------------
       Newborn: [
         {
+          origin: "shelter",
+          text: "You are born in cage number 7 of a shelter on the edge of Rabat. Forty dogs bark in the next room. A volunteer writes your birthday on a piece of tape, and spells it wrong.",
+          choices: [
+            {
+              label: "Climb the cage door",
+              gesture: "hold",
+              chance: 0.55,
+              bonus: { curious: 0.2, brave: 0.1 },
+              stat: "strength",
+              good: "You get to the top bar and stay there, shaking, very proud. The volunteer takes a photo. It goes on the shelter’s Facebook page. Eleven likes.",
+              bad: "You get halfway and fall on your sister. She will remember this.",
+              goodFx: { happy: 8, strength: 5 },
+              badFx: { health: -6 },
+            },
+            {
+              label: "Sleep on the volunteer’s sleeve",
+              chance: 0.7,
+              bonus: { shy: 0.1, clever: 0.1 },
+              good: "She doesn’t move for an hour. She misses her bus. She says it’s fine. You sleep through all of it.",
+              bad: "Her phone rings. She has to go. The cage is colder without her sleeve.",
+              goodFx: { happy: 10, health: 4 },
+            },
+          ],
+        },
+        {
+          origin: "shelter",
+          text: "The vet comes on Tuesdays. Today is Tuesday. He has cold hands, a very small needle, and a radio playing Oum Kalthoum in his pocket.",
+          choices: [
+            {
+              label: "Hide behind your mother",
+              chance: 0.5,
+              bonus: { shy: 0.2 },
+              good: "Your mother gives him a look. He does you last, very gently. Vaccinated. You sulk until dinner.",
+              bad: "Your mother is not as big as you thought. He finds you in two seconds. You scream like it’s the end. It takes one second.",
+              goodFx: { health: 12 },
+              badFx: { health: 8, happy: -8 },
+            },
+            {
+              label: "Bite him",
+              chance: 0.4,
+              bonus: { brave: 0.3, shy: -0.2 },
+              good: "You bite his thumb with your two teeth. He laughs. “This one will survive anything,” he says, and writes something on your tape.",
+              bad: "He doesn’t even notice. Needle, done, next. Your teeth are not ready yet.",
+              goodFx: { health: 12, strength: 4, happy: 6 },
+              badFx: { health: 8, happy: -6 },
+            },
+          ],
+        },
+        {
+          origin: "home",
+          text: "You are born in a laundry basket in a house in Agdal. The youngest daughter has already named you three times. Her grandmother says no cats on the sofa. She says it on the sofa, holding you.",
+          choices: [
+            {
+              label: "Climb onto the grandmother",
+              chance: 0.6,
+              bonus: { brave: 0.1, clever: 0.2 },
+              good: "She pretends to complain for a whole episode of her series. Then she gives you a piece of chicken from the tagine. You are hers now.",
+              bad: "She puts you back in the basket, with dignity. “Cats live outside.” Her own cat, it turns out, lived to twenty.",
+              goodFx: { food: 2, happy: 8 },
+              badFx: { happy: -5 },
+            },
+            {
+              label: "Stay in the warm laundry",
+              chance: 0.75,
+              bonus: { shy: 0.2 },
+              good: "Clean socks, warm from the sun. You sleep for two days. It’s the best bed you will ever have, and you don’t know it yet.",
+              bad: "Someone folds the laundry with you inside. They find you at dinner, in a drawer, very offended.",
+              goodFx: { health: 6, happy: 6 },
+              badFx: { happy: -6 },
+            },
+          ],
+        },
+        {
+          origin: "home",
+          text: "The television is on all day. Football. Every time Raja scores, the uncle jumps up and screams, and you fly out of your basket.",
+          choices: [
+            {
+              label: "Scream back",
+              chance: 0.55,
+              bonus: { brave: 0.2 },
+              good: "The uncle stops, looks at you, and laughs until he coughs. From now on, you watch every match on his knee. You don’t understand the rules. Neither does the referee.",
+              bad: "Nobody hears you. Raja scores again. You fly again.",
+              goodFx: { happy: 10 },
+              badFx: { happy: -5, health: -3 },
+            },
+            {
+              label: "Hide under the sofa",
+              chance: 0.8,
+              bonus: { shy: 0.2 },
+              good: "Under the sofa: a lost earring, a dried date, and peace. You decide this is your office.",
+              bad: "Under the sofa is the dust of ten years. You sneeze for a day.",
+              goodFx: { health: 4 },
+            },
+          ],
+        },
+        {
+          origin: "street",
           text: "You are the size of a msemen. Your mother left “for five minutes” this morning. Above you, the baker pulls down his shutter. It sounds like the end of the world.",
           choices: [
             {
@@ -204,6 +392,7 @@ const STORIES = {
           ],
         },
         {
+          origin: "street",
           text: "A seagull lands on the wall above your nest. Rabat’s seagulls are the size of a small dog. It is counting you and your sisters.",
           choices: [
             {
@@ -253,6 +442,58 @@ const STORIES = {
       ],
       // --------------------------------------------------------
       Kitten: [
+        {
+          origin: "shelter",
+          text: "Adoption day. A girl and her father walk past the cages. The father says they are “just looking”. He has already put a blanket in the car.",
+          choices: [
+            {
+              label: "Push your face against the bars",
+              chance: 0.45,
+              bonus: { brave: 0.1, shy: -0.2, curious: 0.1 },
+              good: "The girl puts one finger through the bars. You hold it with both paws. The father sighs. That night, you sleep in a house in Souissi, with a radiator.",
+              bad: "They take your sister. The shelter is full. A week later, the volunteers clip your ear and let you go in the street by the shelter. They are very kind about it.",
+              goodFx: { happy: 15, health: 6, food: 2 },
+              badFx: { happy: -10 },
+              goodMark: "home",
+              badMark: "eartip",
+            },
+            {
+              label: "Stay at the back of the cage",
+              chance: 0.3,
+              bonus: { shy: 0.15, clever: 0.1 },
+              good: "The girl walks past the cute ones and stops at you. “That one looks like he thinks a lot.” You don’t. But you go home with them anyway.",
+              bad: "Nobody sees you at the back. A week later, the volunteers clip your ear and let you go in the street by the shelter. A man at the café starts calling you “the new one”.",
+              goodFx: { happy: 15, health: 6, food: 2 },
+              badFx: { happy: -10 },
+              goodMark: "home",
+              badMark: "eartip",
+            },
+          ],
+        },
+        {
+          origin: "home",
+          text: "The front door is open. The plumber is fixing the sink and complaining about the last plumber. Outside: the whole street, and it smells of grilled sardines.",
+          choices: [
+            {
+              label: "Go and see",
+              chance: 0.55,
+              bonus: { curious: 0.2, brave: 0.1 },
+              good: "You do the tour: the hanout, the garage, the warm hood of a Dacia. You’re back for dinner. Nobody noticed. You do this every day for the rest of your life.",
+              bad: "A car honks. You run the wrong way for twenty minutes. The daughter finds you at night under a car, three streets away. She cries more than you do.",
+              goodFx: { happy: 12, strength: 5 },
+              badFx: { health: -12, happy: -8 },
+            },
+            {
+              label: "Watch from the doorstep",
+              chance: 0.8,
+              bonus: { shy: 0.2, clever: 0.1 },
+              good: "A street cat walks past and looks at you like you’re a cushion. You decide to stay a cushion a bit longer.",
+              bad: "The plumber closes the door on your tail. He says sorry to you, very seriously. Your tail does not accept.",
+              goodFx: { health: 3 },
+              badFx: { health: -5 },
+            },
+          ],
+        },
         {
           text: "A tourist on the Corniche kneels in front of you. Her camera is bigger than your whole family. She goes “psspsspss” with a terrible accent.",
           choices: [
@@ -581,6 +822,7 @@ const STORIES = {
         },
         {
           fact: "eartip",
+          notIf: "eartip",
           text: "A van parks in your street. A volunteer puts tuna in metal cages, doors wide open. It smells like a trap. It also smells like tuna.",
           choices: [
             {
@@ -917,6 +1159,29 @@ const STORIES = {
           ],
         },
         {
+          needs: "left",
+          text: "Since the family left for Marseille, you live in the garden of the empty house. New people moved in. They have a dog, and a son who drops the crusts of his sandwich on purpose.",
+          choices: [
+            {
+              label: "Make friends with the son",
+              chance: 0.6,
+              bonus: { brave: 0.1, clever: 0.2, shy: -0.1 },
+              good: "He starts bringing a whole sandwich and eating only half. His mother pretends not to see. The dog pretends not to see you.",
+              bad: "The dog sees you first. You spend the afternoon on the wall, very dignified, unable to come down.",
+              goodFx: { food: 2, happy: 10 },
+              badFx: { happy: -6 },
+            },
+            {
+              label: "Keep your distance",
+              chance: 0.75,
+              bonus: { shy: 0.2 },
+              good: "You sleep under the lemon tree, where you always did. Nobody moves you. Some things stay yours.",
+              bad: "They cut the lemon tree down to make a parking space. You sleep under the car instead. It’s not the same.",
+              badFx: { happy: -10 },
+            },
+          ],
+        },
+        {
           text: "The tram rings its bell, same as always. You are older than the tram now. You remember when this street was just dust and scooters.",
           choices: [
             {
@@ -992,10 +1257,112 @@ const STORIES = {
   // ==========================================================
   Tokyo: {
     line: "Neon lights, quiet alleys, and fourteen million people too polite to chase you.",
+    origins: {
+      street: "In a box behind a convenience store, at 2 a.m. The neon sign buzzes all night.",
+      shelter: "In the spare room of a cat rescue group. Thirty volunteers already have a group chat about you.",
+      home: "In a closet in a small apartment, on a pile of sweaters. Someone has already bought you a bed you will never use.",
+    },
     chapters: {
       // --------------------------------------------------------
       Newborn: [
         {
+          origin: "shelter",
+          text: "You are born in the spare room of a cat rescue group in Setagaya. Thirty volunteers have a group chat about you. Your first photo already has 300 likes.",
+          choices: [
+            {
+              label: "Look at the camera",
+              chance: 0.6,
+              bonus: { curious: 0.2, shy: -0.1 },
+              good: "Your second photo gets 2,000. Someone in Osaka makes it her phone background. You are two weeks old and already a brand.",
+              bad: "You sneeze exactly when she takes it. The photo goes in the group chat anyway, with the caption “bless you”.",
+              goodFx: { happy: 10 },
+            },
+            {
+              label: "Hide in the sock drawer",
+              chance: 0.75,
+              bonus: { shy: 0.2 },
+              good: "The sock drawer is warm and smells of fabric softener. They leave it open for you. It becomes a rule.",
+              bad: "The drawer closes. Nobody finds you for an hour. Thirty people in the group chat panic.",
+              goodFx: { health: 6 },
+              badFx: { happy: -8 },
+            },
+          ],
+        },
+        {
+          origin: "shelter",
+          text: "Every morning, the volunteer weighs you on a kitchen scale next to the rice cooker. 410 grams. She writes it in a notebook, like the stock market.",
+          choices: [
+            {
+              label: "Eat everything in your bowl",
+              chance: 0.65,
+              bonus: { brave: 0.1 },
+              good: "450 grams. She draws a little star in the notebook. You are now the best investment in Setagaya.",
+              bad: "You eat too fast and throw up on the notebook. The numbers are hard to read this week.",
+              goodFx: { food: 2, health: 6 },
+              badFx: { health: -5 },
+            },
+            {
+              label: "Let your brother eat first",
+              chance: 0.5,
+              bonus: { shy: 0.1, clever: 0.1 },
+              good: "He leaves you the best part, the gravy. The volunteer writes “kind” next to your name. You were just slow.",
+              bad: "He eats yours too. 400 grams. The volunteer frowns and gives you extra, with a syringe. It tastes of chicken and betrayal.",
+              goodFx: { food: 1, happy: 6 },
+              badFx: { food: -1, health: -4 },
+            },
+          ],
+        },
+        {
+          origin: "home",
+          text: "You are born in a closet in a small apartment in Koenji, on a pile of winter sweaters. The woman who lives here works in a bookshop. She has already bought two books about you.",
+          choices: [
+            {
+              label: "Crawl out to meet her",
+              chance: 0.6,
+              bonus: { curious: 0.2, brave: 0.1 },
+              good: "She lies on the floor so you can climb on her face. She doesn’t move for a long time. Chapter one of the book says not to do this.",
+              bad: "You crawl into the hallway and get stuck between two shoes. She finds you, says “ah” very softly, and puts you back.",
+              goodFx: { happy: 10 },
+              badFx: { happy: -4 },
+            },
+            {
+              label: "Stay in the sweaters",
+              chance: 0.75,
+              bonus: { shy: 0.2 },
+              good: "Wool, warm, and the smell of your mother. She lets the sweaters stay in the closet all summer.",
+              bad: "In October, she needs her sweater. You are in it.",
+              goodFx: { health: 6, happy: 5 },
+              badFx: { happy: -5 },
+            },
+          ],
+        },
+        {
+          origin: "home",
+          text: "The apartment is 25 square metres. To you, it’s a continent. The washing machine is a volcano. The door to the balcony is the end of the world.",
+          choices: [
+            {
+              label: "Explore the volcano",
+              chance: 0.5,
+              bonus: { curious: 0.2, brave: 0.1 },
+              stat: "strength",
+              good: "You climb on it during the spin cycle. It shakes. You shake. You win. You will sit on it every Sunday from now on.",
+              bad: "It starts beeping, very loudly, for no reason. You hide behind the fridge until night.",
+              goodFx: { happy: 8, strength: 5 },
+              badFx: { happy: -6 },
+            },
+            {
+              label: "Map the continent from the sofa",
+              chance: 0.8,
+              bonus: { clever: 0.2, shy: 0.1 },
+              good: "From the sofa you can see everything: the door, the fridge, her. You decide that’s enough world for now.",
+              bad: "You fall off the sofa. It’s a small sofa. It feels like a cliff.",
+              goodFx: { health: 4, happy: 4 },
+              badFx: { health: -5 },
+            },
+          ],
+        },
+        {
+          origin: "street",
           text: "You are born in a box behind a convenience store. It’s 2 a.m. The night worker is on his break, eating a rice ball, looking at nothing.",
           choices: [
             {
@@ -1019,6 +1386,7 @@ const STORIES = {
           ],
         },
         {
+          origin: "street",
           text: "Dawn in the park. The crows wake up first. One lands very close, tilts its head, and looks at you like a snack with legs.",
           choices: [
             {
@@ -1043,6 +1411,7 @@ const STORIES = {
           ],
         },
         {
+          origin: "street",
           text: "Rainy season. Your box is turning into soup. A vending machine hums nearby, warm and bright, selling hot coffee to nobody.",
           choices: [
             {
@@ -1066,6 +1435,61 @@ const STORIES = {
       ],
       // --------------------------------------------------------
       Kitten: [
+        {
+          origin: "shelter",
+          text: "Adoption event, Saturday, in a pet shop car park. You are in a carrier with a card on it. The card says you are “calm”. Nobody asked you.",
+          choices: [
+            {
+              label: "Be calm, like the card says",
+              gesture: "hold",
+              chance: 0.4,
+              bonus: { shy: 0.15, clever: 0.1 },
+              good: "A woman in a raincoat reads your card three times. Two weeks of forms later, she takes you home, to a small apartment over the train tracks.",
+              bad: "Nobody picks you today. The rescue is full. They clip your ear in the shape of a sakura petal and let you go in a park, with a feeder who comes every evening at 7.",
+              goodFx: { happy: 15, health: 6, food: 2 },
+              badFx: { happy: -10 },
+              goodMark: "home",
+              badMark: "eartip",
+            },
+            {
+              label: "Meow at everyone",
+              chance: 0.4,
+              bonus: { brave: 0.2, curious: 0.1, shy: -0.2 },
+              good: "A woman in a raincoat stops. “The card is lying,” she says. She takes you anyway. Your new home is a small apartment over the train tracks.",
+              bad: "People smile and walk past. They want “calm”. The rescue clips your ear in the shape of a sakura petal and lets you go in a park, with a feeder who comes every evening at 7.",
+              goodFx: { happy: 15, health: 6, food: 2 },
+              badFx: { happy: -10 },
+              goodMark: "home",
+              badMark: "eartip",
+            },
+          ],
+        },
+        {
+          origin: "home",
+          text: "The balcony door is open. Below: a train line, a hundred roofs, and a crow on the railing, looking at you like it has a question.",
+          choices: [
+            {
+              label: "Jump onto the railing",
+              gesture: "pounce",
+              chance: 0.45,
+              bonus: { brave: 0.2, curious: 0.1 },
+              stat: "strength",
+              good: "You sit up there like a king for one whole minute. The woman screams in a whisper, so the neighbours don’t hear. The next day, she buys a net.",
+              bad: "The railing is thinner than it looked. You land on the futon drying on the balcony below. The neighbour brings you back with a bow, and the futon.",
+              goodFx: { happy: 10, strength: 6 },
+              badFx: { health: -15, happy: -6 },
+            },
+            {
+              label: "Stay inside and watch the trains",
+              chance: 0.8,
+              bonus: { shy: 0.2, clever: 0.1 },
+              good: "A train every three minutes. You count them. You lose count. You start again. It’s the best TV in Tokyo.",
+              bad: "The crow comes closer and talks to you for an hour. You understand nothing. You feel insulted anyway.",
+              goodFx: { happy: 6 },
+              badFx: { happy: -4 },
+            },
+          ],
+        },
         {
           text: "An old man on a bench feeds the pigeons every morning at 7. Exactly 7. He has noticed you watching.",
           choices: [
@@ -1173,6 +1597,7 @@ const STORIES = {
         },
         {
           fact: "eartip",
+          notIf: "eartip",
           text: "A volunteer in gloves crouches near you with a carrier. She speaks very softly. Other cats left with her and came back with a cut ear and a new attitude.",
           choices: [
             {

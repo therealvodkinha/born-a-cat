@@ -185,7 +185,7 @@ async function drawShareCard(card) {
     y += 66;
     ctx.font = "italic 400 44px Literata";
     ctx.fillStyle = muted;
-    if (!dry) ctx.fillText("born in " + card.city, 540, y);
+    if (!dry) ctx.fillText(card.born, 540, y);
 
     y += 120;
     ctx.font = "600 66px Fraunces";
