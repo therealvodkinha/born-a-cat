@@ -439,6 +439,25 @@ body[data-cond="weak"] .cat { filter: saturate(0.35) brightness(0.96); }
 .cat { scale: var(--size, 1); transform-origin: 50% 100%; transition: scale 1.2s cubic-bezier(0.3, 1.4, 0.5, 1); }
 #home .cat { scale: 1; }
 
+/* The painted pictures (see CAT_PICTURES in art.js). When the coat has them,
+   they take the drawing's place. Of the drawing, only the hearts and
+   sparkles that float around the cat stay, on top. A kitten's picture
+   already looks small, so the pictures grow less than the drawing. */
+body[data-pictures] { --grown: calc(0.3 + 0.7 * var(--size, 1)); }
+.cat-picture { display: none; }
+body[data-pictures] .cat-picture {
+  display: block;
+  /* a shadow on the ground, under the paws */
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--cat-line) 24%, transparent), transparent) 50% 93% / 60% 7% no-repeat;
+  /* a fat cat is wider, but a picture stretches less well than a drawing */
+  scale: calc(var(--grown) * (1 + (var(--fat, 1) - 1) * 0.5)) var(--grown);
+  animation: breathe 3.6s ease-in-out infinite;
+}
+body[data-pictures][data-mood="asleep"] .cat-picture { animation-duration: 5.5s; }
+@keyframes breathe { 50% { transform: scaleY(1.012); } }
+body[data-pictures] svg.cat:not(.walk-cat) { position: absolute; inset: 0; pointer-events: none; scale: var(--grown); }
+body[data-pictures] svg.cat:not(.walk-cat) > :not(.acc-heart, .acc-sparkles) { display: none; }
+
 /* The cat's state, as little stamps: what it has, what happened to it. */
 .status { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0 0 1.3em; }
 .status:empty { display: none; }
@@ -717,6 +736,15 @@ body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
 .walk-cat .walk-tail { transform-origin: 34px 50px; animation: sway 0.7s ease-in-out infinite; }
 body[data-age="kitten"] .walk-head { transform-box: fill-box; transform-origin: 30% 80%; transform: scale(1.18); }
 body[data-cond="weak"] .walk-cat { filter: saturate(0.35); }
+/* Walking, in pictures: they are taller than the drawing, so a bit narrower.
+   With two pictures, the second one shows every other step. */
+body[data-pictures] .walker { width: calc(128px * var(--grown)); }
+.walk-pictures { position: relative; animation: gait 0.35s ease-in-out infinite alternate; }
+.walk-picture { display: block; width: 100%; height: auto; }
+.walk-picture + .walk-picture { position: absolute; inset: 0; animation: frame 0.7s steps(1) infinite; }
+@keyframes gait { from { transform: rotate(-0.8deg); } to { transform: translateY(-3px) rotate(0.8deg); } }
+@keyframes frame { 50% { opacity: 0; } }
+body[data-cond="weak"] .walk-picture { filter: saturate(0.35); }
 .did-you-know { max-width: 34ch; margin: 1.2em auto 0; animation: enter 0.6s 2.4s both; }
 .did-you-know:empty { display: none; }
 #time, #farewell { cursor: pointer; }

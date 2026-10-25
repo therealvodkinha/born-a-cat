@@ -162,13 +162,27 @@ async function drawShareCard(card) {
     const img = await svgPicture(skyline, w, w / 4);
     ctx.drawImage(img, x0, sceneBottom - w / 4 + 10);
   }
-  const cat = document.querySelector("#end-card .cat");
+  const cat = document.querySelector("#end-card svg.cat");
+  const picture = document.querySelector("#end-card .cat-picture");
   if (cat) {
     const size = parseFloat(css.getPropertyValue("--size")) || 1;
-    const side = 560 * Math.max(0.55, size);
-    const img = await svgPicture(cat, side, side, catPose);
+    const side = 560 * Math.max(0.55, document.body.dataset.pictures ? 0.3 + 0.7 * size : size); // see --grown in style.css
+    const top = sceneBottom - side * 0.93;
     if (document.body.dataset.cond === "weak") ctx.filter = "saturate(0.35)";
-    ctx.drawImage(img, 540 - side / 2, sceneBottom - side * 0.93);
+    // the painted cat, on its shadow, a little wider when fat (as on screen)
+    if (document.body.dataset.pictures && picture.complete && picture.naturalWidth) {
+      const fat = 1 + ((parseFloat(css.getPropertyValue("--fat")) || 1) - 1) * 0.5;
+      ctx.beginPath();
+      ctx.ellipse(540, top + side * 0.905, side * 0.3, side * 0.035, 0, 0, Math.PI * 2);
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = color("--cat-line");
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.drawImage(picture, 540 - (side * fat) / 2, top, side * fat, side);
+    }
+    // the drawing (with pictures, only the hearts and sparkles are left of it)
+    const img = await svgPicture(cat, side, side, catPose);
+    ctx.drawImage(img, 540 - side / 2, top);
     ctx.filter = "none";
   }
 
