@@ -23,6 +23,8 @@
 //   origin  : (optional) only for cats born there: "street", "shelter" or "home".
 //             These events come first when they can happen.
 //   fact    : (optional) a real cat fact from facts.js, shown under the outcome
+//   scene   : (optional) where it happens, one of the city's "scenes": its
+//             painting is shown like a photo behind the cat
 //   choices : the buttons (2 or 3)
 //
 // CHOICE
@@ -185,6 +187,7 @@ const ORIGINS = {
 };
 
 // Breeds. Most cats in the world have none (“mixed”).
+//   line     : shown at birth, under the breed's name
 //   coats    : (optional) the coats this breed can have (see COATS in art.js);
 //              one each for now, the one in its pictures (CAT_PICTURES in art.js)
 //   cities   : (optional) only born in these cities
@@ -203,7 +206,7 @@ const BREEDS = {
   persian: {
     label: "Persian",
     coats: ["white"],
-    line: "Persian. Flat face, long fur, the look of a disappointed duchess.",
+    line: "Flat face, long fur, the look of a disappointed duchess.",
     stats: { health: -5, happy: 5 },
     physical: -0.1,
     physicalWhy: "Flat face, short breath",
@@ -213,7 +216,7 @@ const BREEDS = {
   mainecoon: {
     label: "Maine Coon",
     coats: ["grey tabby"],
-    line: "Maine Coon, the biggest breed of house cat. You will be enormous.",
+    line: "The biggest breed of house cat. You will be enormous.",
     stats: { strength: 8 },
     build: 1.3,
     physical: 0.1,
@@ -225,7 +228,7 @@ const BREEDS = {
     label: "Japanese Bobtail",
     cities: ["Tokyo"],
     coats: ["calico"],
-    line: "Japanese Bobtail. A pom-pom tail, like the lucky cat in shop windows.",
+    line: "A pom-pom tail, like the lucky cat in shop windows.",
     stats: { strength: 3 },
     physical: 0.05,
     physicalWhy: "Quick on your feet",
@@ -269,11 +272,26 @@ const STORIES = {
       shelter: "A shelter cage. Clean blankets, and forty dogs next door.",
       home: "A laundry basket in a house. A family before you have teeth.",
     },
+    // the painted places, in img/scenes/rabat-<id>.webp, with the words
+    // written under the photo
+    scenes: {
+      shelter: "The shelter",
+      home: "Home",
+      bakery: "The bakery",
+      roofs: "The rooftops",
+      port: "The port",
+      walls: "The Oudayas",
+      market: "The market",
+      tram: "Avenue Mohammed V",
+      fountain: "The fountain",
+      ramadan: "The mosque street",
+    },
     chapters: {
       // --------------------------------------------------------
       Newborn: [
         {
           origin: "shelter",
+          scene: "shelter",
           text: "You are born in cage number 7 of a shelter on the edge of Rabat. Forty dogs bark in the next room. A volunteer writes your birthday on a piece of tape, and spells it wrong.",
           choices: [
             {
@@ -299,6 +317,7 @@ const STORIES = {
         },
         {
           origin: "shelter",
+          scene: "shelter",
           text: "The vet comes on Tuesdays. Today is Tuesday. He has cold hands, a very small needle, and a radio playing Oum Kalthoum in his pocket.",
           choices: [
             {
@@ -323,6 +342,7 @@ const STORIES = {
         },
         {
           origin: "home",
+          scene: "home",
           text: "You are born in a laundry basket in a house in Agdal. The youngest daughter has already named you three times. Her grandmother says no cats on the sofa. She says it on the sofa, holding you.",
           choices: [
             {
@@ -347,6 +367,7 @@ const STORIES = {
         },
         {
           origin: "home",
+          scene: "home",
           text: "The television is on all day. Football. Every time Raja scores, the uncle jumps up and screams, and you fly out of your basket.",
           choices: [
             {
@@ -370,6 +391,7 @@ const STORIES = {
         },
         {
           origin: "street",
+          scene: "bakery",
           text: "You are the size of a msemen. Your mother left “for five minutes” this morning. Above you, the baker pulls down his shutter. It sounds like the end of the world.",
           choices: [
             {
@@ -394,6 +416,7 @@ const STORIES = {
         },
         {
           origin: "street",
+          scene: "roofs",
           text: "A seagull lands on the wall above your nest. Rabat’s seagulls are the size of a small dog. It is counting you and your sisters.",
           choices: [
             {
@@ -445,6 +468,7 @@ const STORIES = {
       Kitten: [
         {
           origin: "shelter",
+          scene: "shelter",
           text: "Adoption day. A girl and her father walk past the cages. The father says they are “just looking”. He has already put a blanket in the car.",
           choices: [
             {
@@ -473,6 +497,7 @@ const STORIES = {
         },
         {
           origin: "home",
+          scene: "home",
           text: "The front door is open. The plumber is fixing the sink and complaining about the last plumber. Outside: the whole street, and it smells of grilled sardines.",
           choices: [
             {
@@ -496,6 +521,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "port",
           text: "A tourist on the Corniche kneels in front of you. Her camera is bigger than your whole family. She goes “psspsspss” with a terrible accent.",
           choices: [
             {
@@ -517,6 +543,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "walls",
           text: "Your mother is teaching you to hunt, by the old city walls. A lizard sleeps on a hot stone. It looks delicious and a bit stupid.",
           choices: [
             {
@@ -542,6 +569,7 @@ const STORIES = {
         },
         {
           fact: "falls",
+          scene: "roofs",
           text: "A roof terrace in the medina. Washing lines, a satellite dish, and a pigeon on the very edge. It hasn’t seen you.",
           choices: [
             {
@@ -569,6 +597,7 @@ const STORIES = {
         },
         {
           fact: "lapping",
+          scene: "fountain",
           text: "The fountain in the square. Water runs out of a brass tap all day. You are very thirsty, and very small.",
           choices: [
             {
@@ -617,6 +646,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "walls",
           text: "A little girl crouches near the Oudayas. She holds out her hand very slowly, like it’s a big responsibility. Her mother is calling her, louder each time.",
           choices: [
             {
@@ -642,6 +672,7 @@ const STORIES = {
         },
         {
           needs: "baker",
+          scene: "bakery",
           text: "The baker leaves the back door open at night now. Between the flour bags, something is moving. Something small, with a tail.",
           choices: [
             {
@@ -666,6 +697,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "tram",
           text: "The tram rings its bell. On the other side of the tracks, the fish guy is throwing out what he couldn’t sell. Five cats have seen it.",
           choices: [
             {
@@ -696,6 +728,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "market",
           text: "Outside the hanout, six cats sit in a row on the step, like customers. The owner gives scraps to whoever looks the most tragic.",
           choices: [
             {
@@ -723,6 +756,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "tram",
           text: "You fall asleep in the open boot of a petit taxi. You wake up in Salé, on the other side of the river. Nothing smells right.",
           choices: [
             {
@@ -753,6 +787,7 @@ const STORIES = {
       // --------------------------------------------------------
       Adult: [
         {
+          scene: "roofs",
           text: "Spring. A tabby with green eyes has been staring at you from the next roof for three evenings. Either she likes you or she wants your roof.",
           choices: [
             {
@@ -778,6 +813,7 @@ const STORIES = {
         },
         {
           needs: "girl",
+          scene: "walls",
           text: "The girl comes back with a shoebox full of holes. “My father finally said yes.” She has been repeating it all the way here.",
           choices: [
             {
@@ -800,6 +836,7 @@ const STORIES = {
         },
         {
           needs: "gang",
+          scene: "market",
           text: "The big orange tom is getting slow. He sleeps more than he terrorises. The young cats are looking at you. The fish market could be yours.",
           choices: [
             {
@@ -848,6 +885,7 @@ const STORIES = {
         },
         {
           fact: "islam",
+          scene: "ramadan",
           text: "Friday. The muezzin calls. The big doors of the mosque are open, and inside there are carpets. Kilometres of soft carpet.",
           choices: [
             {
@@ -873,6 +911,7 @@ const STORIES = {
         },
         {
           fact: "sweet",
+          scene: "ramadan",
           text: "Ramadan. At sunset, the whole street stops to eat at once. On a tray by a door, a pile of chebakia, shining with honey.",
           choices: [
             {
@@ -899,6 +938,7 @@ const STORIES = {
       "Hard times": [
         {
           fact: "lapping",
+          scene: "fountain",
           text: "August. The heat sits on Rabat like a fat cat on a newspaper. Every bowl of water in the street is dry.",
           choices: [
             {
@@ -978,6 +1018,7 @@ const STORIES = {
         },
         {
           needs: "home",
+          scene: "home",
           text: "Boxes everywhere. The family is moving to Marseille. At night they argue in the kitchen. Your name keeps coming up.",
           choices: [
             {
@@ -1030,6 +1071,7 @@ const STORIES = {
         {
           needs: "baker",
           notIf: "home",
+          scene: "bakery",
           text: "Your legs complain in the morning now. The baker is gone. His son runs the shop. He has the same sigh.",
           choices: [
             {
@@ -1052,6 +1094,7 @@ const STORIES = {
         },
         {
           notIf: "home",
+          scene: "port",
           text: "The wind from the sea is colder this year. Or you are. The fishermen at the port know your face now.",
           choices: [
             {
@@ -1098,6 +1141,7 @@ const STORIES = {
         },
         {
           needs: "girl",
+          scene: "walls",
           text: "A young woman stops in the street and looks at you for a long time. “Is it you?” She crouches down, very slowly.",
           choices: [
             {
@@ -1119,6 +1163,7 @@ const STORIES = {
         {
           needs: "home",
           notIf: "left",
+          scene: "home",
           text: "You live on a windowsill in Souissi, in the sun. Every morning, the girl, grown up now, tells you her plans. You don’t care. You listen anyway.",
           choices: [
             {
@@ -1140,6 +1185,7 @@ const STORIES = {
         {
           needs: "home",
           notIf: "left",
+          scene: "home",
           text: "You have a house and a cushion. You still do your rounds: the wall, the garden, the hanout street. Halfway there, you run into her.",
           choices: [
             {
@@ -1183,6 +1229,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "tram",
           text: "The tram rings its bell, same as always. You are older than the tram now. You remember when this street was just dust and scooters.",
           choices: [
             {
@@ -1263,11 +1310,24 @@ const STORIES = {
       shelter: "A rescue group’s spare room. Thirty volunteers, one group chat about you.",
       home: "A closet full of sweaters, in a small apartment. Your bed is already bought. You will never use it.",
     },
+    scenes: {
+      shelter: "The rescue room",
+      flat: "Home",
+      konbini: "The konbini",
+      park: "The park",
+      temple: "The temple",
+      station: "The station",
+      alley: "The yakitori alley",
+      roofs: "The rooftops",
+      sakura: "Cherry blossoms",
+      street: "The street",
+    },
     chapters: {
       // --------------------------------------------------------
       Newborn: [
         {
           origin: "shelter",
+          scene: "shelter",
           text: "You are born in the spare room of a cat rescue group in Setagaya. Thirty volunteers have a group chat about you. Your first photo already has 300 likes.",
           choices: [
             {
@@ -1291,6 +1351,7 @@ const STORIES = {
         },
         {
           origin: "shelter",
+          scene: "shelter",
           text: "Every morning, the volunteer weighs you on a kitchen scale next to the rice cooker. 410 grams. She writes it in a notebook, like the stock market.",
           choices: [
             {
@@ -1315,6 +1376,7 @@ const STORIES = {
         },
         {
           origin: "home",
+          scene: "flat",
           text: "You are born in a closet in a small apartment in Koenji, on a pile of winter sweaters. The woman who lives here works in a bookshop. She has already bought two books about you.",
           choices: [
             {
@@ -1339,6 +1401,7 @@ const STORIES = {
         },
         {
           origin: "home",
+          scene: "flat",
           text: "The apartment is 25 square metres. To you, it’s a continent. The washing machine is a volcano. The door to the balcony is the end of the world.",
           choices: [
             {
@@ -1364,6 +1427,7 @@ const STORIES = {
         },
         {
           origin: "street",
+          scene: "konbini",
           text: "You are born in a box behind a convenience store. It’s 2 a.m. The night worker is on his break, eating a rice ball, looking at nothing.",
           choices: [
             {
@@ -1388,6 +1452,7 @@ const STORIES = {
         },
         {
           origin: "street",
+          scene: "park",
           text: "Dawn in the park. The crows wake up first. One lands very close, tilts its head, and looks at you like a snack with legs.",
           choices: [
             {
@@ -1413,6 +1478,7 @@ const STORIES = {
         },
         {
           origin: "street",
+          scene: "street",
           text: "Rainy season. Your box is turning into soup. A vending machine hums nearby, warm and bright, selling hot coffee to nobody.",
           choices: [
             {
@@ -1438,6 +1504,7 @@ const STORIES = {
       Kitten: [
         {
           origin: "shelter",
+          scene: "shelter",
           text: "Adoption event, Saturday, in a pet shop car park. You are in a carrier with a card on it. The card says you are “calm”. Nobody asked you.",
           choices: [
             {
@@ -1467,6 +1534,7 @@ const STORIES = {
         },
         {
           origin: "home",
+          scene: "flat",
           text: "The balcony door is open. Below: a train line, a hundred roofs, and a crow on the railing, looking at you like it has a question.",
           choices: [
             {
@@ -1492,6 +1560,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "park",
           text: "An old man on a bench feeds the pigeons every morning at 7. Exactly 7. He has noticed you watching.",
           choices: [
             {
@@ -1517,6 +1586,7 @@ const STORIES = {
         },
         {
           fact: "falls",
+          scene: "flat",
           text: "Fourth-floor balcony. A moth is dancing just past the railing. You have never wanted anything so much.",
           choices: [
             {
@@ -1543,6 +1613,7 @@ const STORIES = {
         },
         {
           fact: "lapping",
+          scene: "temple",
           text: "At the temple, people wash their hands at a stone basin with bamboo ladles. The water is cold and perfect.",
           choices: [
             {
@@ -1568,6 +1639,7 @@ const STORIES = {
       // --------------------------------------------------------
       Young: [
         {
+          scene: "park",
           text: "Every evening, a woman with a parasol leaves food in a small park. Lots of cats come. There is a hierarchy. You are at the bottom.",
           choices: [
             {
@@ -1599,6 +1671,7 @@ const STORIES = {
         {
           fact: "eartip",
           notIf: "eartip",
+          scene: "park",
           text: "A volunteer in gloves crouches near you with a carrier. She speaks very softly. Other cats left with her and came back with a cut ear and a new attitude.",
           choices: [
             {
@@ -1625,6 +1698,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "station",
           text: "A station at rush hour. Thousands of shoes, all going somewhere fast. Somewhere inside, a noodle stand drops things.",
           choices: [
             {
@@ -1650,6 +1724,7 @@ const STORIES = {
         },
         {
           needs: "konbini",
+          scene: "konbini",
           text: "The night worker calls you “Onigiri” now. The automatic door opens every time you pass. “Irasshaimase!” You think it’s talking to you.",
           choices: [
             {
@@ -1699,6 +1774,7 @@ const STORIES = {
         {
           needs: "parklady",
           fact: "names",
+          scene: "park",
           text: "The park woman comes alone one evening, with a carrier. “My apartment is very small,” she says, as if you had asked. “But it’s warm.” She says your name. You turn one ear.",
           choices: [
             {
@@ -1720,6 +1796,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "roofs",
           text: "On the rooftops, a white cat with one blue eye and one yellow eye has noticed you. She looks at you with both. It’s a lot.",
           choices: [
             {
@@ -1742,6 +1819,7 @@ const STORIES = {
         },
         {
           fact: "gotokuji",
+          scene: "street",
           text: "A typhoon is coming. The wind pulls at the shop signs. The whole city closes its shutters very calmly, as if this happens every year. It does.",
           choices: [
             {
@@ -1768,6 +1846,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "alley",
           text: "Midnight, outside a yakitori bar. A man in a suit sits on the curb, explaining to nobody why his boss is wrong. He holds his skewer like a microphone.",
           choices: [
             {
@@ -1793,6 +1872,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "alley",
           text: "A man with a camera is lying on his stomach in your alley. He films cats for television. He says “ii ne, ii ne” very softly.",
           choices: [
             {
@@ -1821,6 +1901,7 @@ const STORIES = {
       "Hard times": [
         {
           notIf: "home",
+          scene: "park",
           text: "New signs in the park: “Please do not feed the cats.” The neighbours complained. The food stops. The signs are very polite about it.",
           choices: [
             {
@@ -1866,6 +1947,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "konbini",
           text: "The ground shakes. Not a lot. Enough. The shelves of the konbini rattle. Every phone in the street beeps at once.",
           choices: [
             {
@@ -1892,6 +1974,7 @@ const STORIES = {
         {
           needs: "home",
           fact: "voices",
+          scene: "flat",
           text: "The woman doesn’t come home one evening. Or the next. The neighbour has a key. She stands in the doorway, not sure what to do with a cat.",
           choices: [
             {
@@ -1916,6 +1999,7 @@ const STORIES = {
         },
         {
           needs: "kittens",
+          scene: "roofs",
           text: "Your kittens are grown. The smallest refuses to leave the water tank. It has decided this is its home forever, preferably on top of you.",
           choices: [
             {
@@ -1941,6 +2025,7 @@ const STORIES = {
       "Old age": [
         {
           needs: "konbini",
+          scene: "konbini",
           text: "The night worker from that first night is the manager now. His hair is grey. He still takes his break at 2 a.m., with a rice ball.",
           choices: [
             {
@@ -1963,6 +2048,7 @@ const STORIES = {
         },
         {
           notIf: "home",
+          scene: "temple",
           text: "The monk at the temple leaves the side door open on cold nights now. He says it’s for the air. It’s not for the air.",
           choices: [
             {
@@ -1983,6 +2069,7 @@ const STORIES = {
         },
         {
           fact: "blink",
+          scene: "street",
           text: "Schoolchildren in yellow hats walk past every morning. One of them always stops to say “ohayō” to you, with a little bow.",
           choices: [
             {
@@ -2005,6 +2092,7 @@ const STORIES = {
         {
           needs: "home",
           notIf: "left",
+          scene: "flat",
           text: "You sleep most of the day by the window over the tracks. The woman reads next to you. Neither of you is in a hurry anymore.",
           choices: [
             {
@@ -2024,6 +2112,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "sakura",
           text: "Cherry blossom season. Under the trees, families sit on blue tarps, eating and singing. Pink petals land on your back.",
           choices: [
             {
@@ -2045,6 +2134,7 @@ const STORIES = {
           ],
         },
         {
+          scene: "flat",
           text: "Winter. Through a ground-floor window, you see it: a kotatsu. A low table with a heater under it, and a thick blanket all around. An old lady has her legs under it.",
           choices: [
             {
@@ -2067,6 +2157,7 @@ const STORIES = {
         },
         {
           needs: "famous",
+          scene: "street",
           text: "A woman with a phone stops you in the street. “It’s the cat from the TV!” She shows you to her phone. The phone shows you to Osaka.",
           choices: [
             {
