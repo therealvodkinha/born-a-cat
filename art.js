@@ -150,7 +150,7 @@ const CAT_PICTURES = {
     kitten: "img/cats/black-kitten.webp",
     old: "img/cats/black-old.webp",
     sleep: "img/cats/black-sleep.webp",
-    walk: ["img/cats/black-walk.webp"],
+    walk: ["img/cats/black-walk-1.webp", "img/cats/black-walk-2.webp"],
   },
   "grey tabby": {
     adult: "img/cats/grey-tabby-adult.webp",
@@ -158,6 +158,13 @@ const CAT_PICTURES = {
     old: "img/cats/grey-tabby-old.webp",
     sleep: "img/cats/grey-tabby-sleep.webp",
     walk: ["img/cats/grey-tabby-walk-1.webp", "img/cats/grey-tabby-walk-2.webp"],
+  },
+  white: {
+    adult: "img/cats/white-adult.webp",
+    kitten: "img/cats/white-kitten.webp",
+    old: "img/cats/white-old.webp",
+    sleep: "img/cats/white-sleep.webp",
+    walk: ["img/cats/white-walk.webp"],
   },
 };
 
