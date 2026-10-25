@@ -134,7 +134,8 @@ const WALK_SVG = `
 // Painted pictures of the cat, in img/cats/. A coat (or a breed, for a cat
 // with a breed) that has them shows them instead of the drawings above. The
 // others keep the drawings until their pictures are made.
-//   adult, kitten, old : sitting, at each age (a 640 square, paws at 90 %)
+//   adult, kitten, old : sitting, at each age (a 640 square, paws at 90 %);
+//                        without a kitten, the adult is shown, smaller
 //   sleep              : asleep, curled up
 //   walk               : walking to the right; two pictures are shown in turn
 const CAT_PICTURES = {
@@ -165,6 +166,12 @@ const CAT_PICTURES = {
     old: "img/cats/white-old.webp",
     sleep: "img/cats/white-sleep.webp",
     walk: ["img/cats/white-walk.webp"],
+  },
+  calico: {
+    adult: "img/cats/calico-adult.webp",
+    old: "img/cats/calico-old.webp",
+    sleep: "img/cats/calico-sleep.webp",
+    walk: ["img/cats/calico-walk.webp"],
   },
 };
 
