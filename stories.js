@@ -31,7 +31,7 @@
 //   bonus    : (optional) chance added or removed for a trait, e.g. { brave: 0.2, shy: -0.2 }
 //   stat     : (optional) "strength" or "health": a strong (or healthy) cat does better
 //   gesture  : (optional) the player must do something to try it, and doing it well helps:
-//              "pounce" (tap at the right moment), "hold" (keep the finger down),
+//              "pounce" (tap at the right moment), "hold" (let go at the right moment),
 //              "run" (tap fast). See GESTURES in rules.js.
 //   mods     : (optional) the same choice works differently for different cats.
 //              A list of { needs / notIf / coat / cond, chance, why, good, bad }:

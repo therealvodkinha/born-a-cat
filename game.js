@@ -405,7 +405,7 @@ function showEvent() {
 // ------------------------------------------------------------
 // Gestures: some choices are not just a tap.
 //   pounce: tap when the paw crosses the gold zone
-//   hold:   keep your finger down until the circle is full
+//   hold:   keep your finger down, let go when the circle is in the gold
 //   run:    tap as fast as you can
 // Each one gives a "skill" bonus or malus to the chance (see GESTURES).
 // ------------------------------------------------------------
@@ -416,8 +416,8 @@ function startGesture(choice) {
   panel.dataset.kind = choice.gesture;
   const done = (skill, word) => {
     panel.querySelector(".g-verdict").textContent = word;
-    if (skill > 0.1) SOUND.play("perfect");
-    panel.classList.add("judged", skill > 0.1 ? "great" : skill > 0 ? "fine" : "poor");
+    if (skill > 0.2) SOUND.play("perfect");
+    panel.classList.add("judged", skill > 0.2 ? "great" : skill > 0 ? "fine" : "poor");
     setTimeout(() => {
       panel.className = "gesture hidden";
       choose(choice, skill);
@@ -427,10 +427,12 @@ function startGesture(choice) {
   ({ pounce: pounceGame, hold: holdGame, run: runGame })[choice.gesture](panel, choice, done);
 }
 
+// What a gesture adds to the chance: enough that a perfect one nearly
+// always works and a missed one nearly never does.
 function verdict(score) {
-  if (score >= 1) return [0.2, "Perfect!"];
-  if (score >= 0.5) return [0.05, "Not bad"];
-  return [-0.1, "Too bad"];
+  if (score >= 1) return [0.4, "Perfect!"];
+  if (score >= 0.5) return [0.1, "Not bad"];
+  return [-0.3, "Too bad"];
 }
 
 function pounceGame(panel, choice, done) {
@@ -466,10 +468,14 @@ function pounceGame(panel, choice, done) {
 }
 
 function holdGame(panel, choice, done) {
-  const needed = 1600; // ms
+  const needed = 1600; // ms for the circle to fill
+  const zone = 0.55 + Math.random() * 0.3; // where the gold starts, 0 to 1
+  const width = 0.12;
   panel.innerHTML =
     `<p class="g-hint">${GESTURES.hold.hint}</p>` +
-    `<button type="button" class="g-btn hold-btn"><svg viewBox="0 0 100 100" class="ring"><circle cx="50" cy="50" r="44"/><circle class="fill" cx="50" cy="50" r="44" pathLength="100"/></svg><span>Hold</span></button>` +
+    `<button type="button" class="g-btn hold-btn"><svg viewBox="0 0 100 100" class="ring"><circle cx="50" cy="50" r="44"/>` +
+    `<circle class="zone" cx="50" cy="50" r="44" pathLength="100" stroke-dasharray="${width * 100} 100" stroke-dashoffset="${-zone * 100}"/>` +
+    `<circle class="fill" cx="50" cy="50" r="44" pathLength="100"/></svg><span>Hold</span></button>` +
     `<p class="g-verdict"></p>`;
   const btn = panel.querySelector(".g-btn");
   const fill = panel.querySelector(".fill");
@@ -481,11 +487,15 @@ function holdGame(panel, choice, done) {
     over = true;
     cancelAnimationFrame(frame);
     btn.classList.remove("holding");
-    done(...verdict(fraction >= 1 ? 1 : fraction >= 0.6 ? 0.5 : 0));
+    // let go in the gold: perfect; just before or after it: not bad; held
+    // until the circle is full: too long
+    const off = fraction < zone ? zone - fraction : fraction > zone + width ? fraction - zone - width : 0;
+    done(...verdict(fraction >= 1 ? 0 : off === 0 ? 1 : off <= width / 2 ? 0.5 : 0));
   };
   const tick = (now) => {
     const f = Math.min(1, (now - start) / needed);
     fill.style.strokeDashoffset = 100 - f * 100;
+    btn.classList.toggle("in-zone", f >= zone && f <= zone + width);
     if (f >= 1) return finish(1);
     frame = requestAnimationFrame(tick);
   };
@@ -514,7 +524,7 @@ function holdGame(panel, choice, done) {
 }
 
 function runGame(panel, choice, done) {
-  const goal = 12;
+  const goal = 15;
   const time = 2500; // ms, from the first tap
   panel.innerHTML =
     `<p class="g-hint">${GESTURES.run.hint}</p>` +
