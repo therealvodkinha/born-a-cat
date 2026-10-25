@@ -9,22 +9,22 @@ const vm = require("vm");
 
 const root = path.join(__dirname, "..");
 const context = vm.createContext({ Math });
-for (const file of ["art.js", "stories.js", "rules.js"]) {
+for (const file of ["art.js", "stories.js", "rules.js", "rewards.js"]) {
   vm.runInContext(fs.readFileSync(path.join(root, file), "utf8"), context, { filename: file });
 }
-const { STORIES, STEPS, COATS, pick, newLife, beginStep, drawEvent, rollChoice, applyOutcome, endStep, drawEnding, averageSkill } =
+const { STORIES, STEPS, pick, newLife, beginStep, drawEvent, rollChoice, applyOutcome, endStep, drawEnding, averageSkill, lifeScore } =
   vm.runInContext(
-    "({ STORIES, STEPS, COATS, pick, newLife, beginStep, drawEvent, rollChoice, applyOutcome, endStep, drawEnding, averageSkill })",
+    "({ STORIES, STEPS, pick, newLife, beginStep, drawEvent, rollChoice, applyOutcome, endStep, drawEnding, averageSkill, lifeScore })",
     context
   );
 
 // One whole life with random choices. Returns the life and its ending.
 function playOnce(city) {
-  const life = newLife(city, pick(COATS).id);
+  const life = newLife(city);
   do {
     beginStep(life);
     const event = drawEvent(life);
-    if (!event) throw new Error(`${city}: no event left at step ${life.step} (${STEPS[life.step].age})`);
+    if (!event) throw new Error(`${city}: no event left at step ${life.step} (${STEPS[life.step].age}) for a ${life.origin} cat with ${[...life.marks]}`);
     const choice = pick(event.choices);
     const { wentWell } = rollChoice(choice, life, choice.gesture ? averageSkill() : 0);
     applyOutcome(life, choice, wentWell);
@@ -39,18 +39,28 @@ for (const city of Object.keys(STORIES)) {
   const counts = {};
   const lengths = {};
   const deaths = {};
+  const stars = {}; // origin -> [1 star, 2, 3]
+  const states = {};
   for (let n = 0; n < LIVES; n++) {
     const { life, ending } = playOnce(city);
     if (life.death === "hurt") deaths["hurt at " + STEPS[life.step].chapter.name] = (deaths["hurt at " + STEPS[life.step].chapter.name] || 0) + 1;
     counts[ending.title] = (counts[ending.title] || 0) + 1;
     lengths[life.step + 1] = (lengths[life.step + 1] || 0) + 1;
     deaths[life.death] = (deaths[life.death] || 0) + 1;
+    const result = lifeScore(life, ending);
+    (stars[life.origin] = stars[life.origin] || [0, 0, 0])[result.stars - 1]++;
+    states[life.origin + " " + result.state] = (states[life.origin + " " + result.state] || 0) + 1;
   }
   odds[city] = {};
   for (const e of STORIES[city].endings) odds[city][e.title] = +((counts[e.title] || 0) / LIVES).toFixed(4);
   if (report) {
     const pct = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, (v / LIVES * 100).toFixed(1) + "%"]));
     console.log(city, "\n  steps lived:", pct(lengths), "\n  death:", pct(deaths));
+    for (const [origin, s] of Object.entries(stars)) {
+      const n = s[0] + s[1] + s[2];
+      console.log(`  ${origin} (${((n / LIVES) * 100).toFixed(0)}%): stars 1/2/3 = ${s.map((v) => ((v / n) * 100).toFixed(0) + "%").join(" / ")}`);
+    }
+    console.log("  end states:", pct(states));
   }
 }
 

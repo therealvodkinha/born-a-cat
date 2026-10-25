@@ -8,6 +8,14 @@ function pick(list, rng = Math.random) {
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+// Picks a key of { key: weight }, weights in any unit.
+function pickWeighted(weights, rng = Math.random) {
+  const entries = Object.entries(weights).filter(([, w]) => w > 0);
+  let r = rng() * entries.reduce((sum, [, w]) => sum + w, 0);
+  for (const [key, w] of entries) if ((r -= w) < 0) return key;
+  return entries[entries.length - 1][0];
+}
+
 // The steps of a life, in order: [{ chapter, chapterIndex, age, kg, cm, risk }].
 const STEPS = LIFE.flatMap((chapter, chapterIndex) =>
   chapter.steps.map((s) => ({ ...s, chapter, chapterIndex }))
@@ -19,22 +27,37 @@ const DEFAULT_FX = {
   bad: { happy: -6, health: -5 },
 };
 
-function newLife(city, coat, rng = Math.random) {
-  return {
+// A new cat: first where it is born, then its breed, its coat and its trait.
+function newLife(city, rng = Math.random) {
+  const origin = pickWeighted(Object.fromEntries(Object.entries(ORIGINS).map(([id, o]) => [id, o.chance])), rng);
+  const breedOdds = { ...ORIGINS[origin].breeds };
+  for (const id in breedOdds) if (BREEDS[id].cities && !BREEDS[id].cities.includes(city)) delete breedOdds[id];
+  const breed = pickWeighted(breedOdds, rng);
+  const coats = COATS.filter((c) => !BREEDS[breed].coats || BREEDS[breed].coats.includes(c.id));
+  const life = {
     city,
-    coat,            // id of the coat, from COATS in art.js
+    origin,          // where it was born, from ORIGINS
+    breed,           // from BREEDS
+    coat: pick(coats, rng).id, // id of the coat, from COATS in art.js
     trait: pick(TRAITS, rng),
     step: 0,
     stats: { ...START_STATS },
     fed: 0,          // -4 (starving) to +4 (fat and happy); fades a little each step
-    build: 0.9 + rng() * 0.2, // born small or big
+    build: (0.9 + rng() * 0.2) * (BREEDS[breed].build || 1), // born small or big
     growth: 0,       // extra size from eating well while young
-    marks: new Set(),
+    marks: new Set(ORIGINS[origin].marks),
     seen: new Set(), // events already lived
     good: 0,
     bad: 0,
     death: null,     // null, "hurt" (health reached 0) or "age"
+    lowest: 100,     // the worst health it lived through
+    happySum: 0,     // happiness after each step, added up (for the average)
   };
+  for (const key of ["health", "happy", "strength"]) {
+    const add = (ORIGINS[origin].stats[key] || 0) + (BREEDS[breed].stats[key] || 0);
+    life.stats[key] = clamp(life.stats[key] + add, 0, 100);
+  }
+  return life;
 }
 
 // An event or ending can only happen if its marks allow it.
@@ -59,10 +82,18 @@ function beginStep(life) {
 
 function drawEvent(life, rng = Math.random) {
   const events = STORIES[life.city].chapters[stepOf(life).chapter.name];
-  const possible = events.filter((e) => allowed(e, life.marks) && !life.seen.has(e));
+  const possible = events.filter(
+    (e) => allowed(e, life.marks) && !life.seen.has(e) && (!e.origin || e.origin === life.origin)
+  );
+  // Events about where the cat was born come first.
+  const fromBirth = possible.filter((e) => e.origin);
   // Follow-ups (events that need a mark) are favoured when they can happen.
   const followUps = possible.filter((e) => e.needs);
-  const event = followUps.length && rng() < 0.7 ? pick(followUps, rng) : pick(possible, rng);
+  const event = fromBirth.length
+    ? pick(fromBirth, rng)
+    : followUps.length && rng() < 0.7
+      ? pick(followUps, rng)
+      : pick(possible, rng);
   life.seen.add(event);
   return event;
 }
@@ -71,11 +102,16 @@ function drawEvent(life, rng = Math.random) {
 function modApplies(mod, life) {
   if (!allowed(mod, life.marks)) return false;
   if (mod.coat && mod.coat !== life.coat) return false;
+  if (mod.breed && mod.breed !== life.breed) return false;
+  if (mod.origin && mod.origin !== life.origin) return false;
   if (mod.cond && mod.cond !== conditionOf(life)) return false;
   return true;
 }
 
 const TRAIT_NAMES = { brave: "Brave", shy: "Shy", curious: "Curious", clever: "Clever" };
+
+// Marks that mean a human took to the cat. A breed's "charm" helps to win them.
+const HUMAN_MARKS = ["home", "girl", "baker", "konbini", "parklady", "famous"];
 
 // How likely a choice is to go well for THIS cat, and why.
 // "skill" is the bonus from the gesture (see GESTURES), 0 if none.
@@ -96,6 +132,9 @@ function chanceOf(choice, life, skill = 0) {
   const physical = choice.stat === "strength" || choice.gesture === "run" || choice.gesture === "pounce";
   if (physical && life.marks.has("limp")) add(MARKS.limp.label, -0.1);
   if (physical && conditionOf(life) === "weak") add(CONDITIONS.weak.label, -0.1);
+  const breed = BREEDS[life.breed];
+  if (physical) add(breed.physicalWhy, breed.physical);
+  if (HUMAN_MARKS.includes(choice.goodMark) && !life.marks.has(choice.goodMark)) add(breed.charmWhy, breed.charm);
   const mods = (choice.mods || []).filter((m) => modApplies(m, life));
   for (const m of mods) add(m.why || "", m.chance || 0);
   add(skill > 0 ? "Good timing" : "Bad timing", skill);
@@ -150,6 +189,8 @@ function applyOutcome(life, choice, wentWell) {
   const isNew = !!mark && !life.marks.has(mark);
   if (mark) life.marks.add(mark);
   if (life.stats.health <= 0) life.death = "hurt";
+  life.lowest = Math.min(life.lowest, life.stats.health);
+  life.happySum += life.stats.happy;
 
   const change = {};
   for (const key of ["health", "happy", "strength"]) change[key] = life.stats[key] - before[key];
