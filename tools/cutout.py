@@ -13,6 +13,10 @@
   python3 tools/cutout.py match IN.png REF.png OUT.png
                                                    makes IN as light or dark as REF (another
                                                    picture of the same cat)
+  python3 tools/cutout.py split IN.png OUT-1.png OUT-2.png
+                                                   one picture with the cat twice, side by side
+                                                   (two steps of a walk): one picture per step,
+                                                   the second moved to sit on the first
   python3 tools/cutout.py frame IN.png img/cats/OUT.webp sit|sleep|walk [OTHER.png ...]
                                                    with OTHER pictures (the other walking
                                                    picture), both are cut the same, so they
@@ -121,6 +125,40 @@ def match(src, ref, dst):
     Image.fromarray(a.astype(np.uint8), "RGBA").save(dst)
 
 
+def split(src, dst1, dst2):
+    im = Image.open(src).convert("RGBA")
+    solid = np.asarray(im.getchannel("A")) > 40
+    w, h = im.size
+    # the two cats are cut apart in the middle of the widest empty gap
+    empty = ~solid.any(0)
+    gap, x = (0, 0), w // 4
+    while x < 3 * w // 4:
+        start = x
+        while x < w and empty[x]:
+            x += 1
+        if x - start > gap[1] - gap[0]:
+            gap = (start, x)
+        x += 1
+    cut = sum(gap) // 2
+    left, right = im.crop((0, 0, cut, h)), im.crop((cut, 0, w, h))
+    # where the second cat overlaps the first the most (searched at a
+    # quarter size, from noses and paws lined up)
+    lb, rb = left.getchannel("A").getbbox(), right.getchannel("A").getbbox()
+    small = lambda i: np.asarray(i.getchannel("A").reduce(4)) > 40
+    a, b = small(left), small(right)
+    def overlap(dx, dy):
+        moved = np.zeros_like(a)
+        ys, xs = slice(max(dy, 0), min(a.shape[0], b.shape[0] + dy)), slice(max(dx, 0), min(a.shape[1], b.shape[1] + dx))
+        moved[ys, xs] = b[ys.start - dy:ys.stop - dy, xs.start - dx:xs.stop - dx]
+        return (a & moved).sum() / max((a | moved).sum(), 1)
+    dx0, dy0 = (lb[2] - rb[2]) // 4, (lb[3] - rb[3]) // 4
+    dx, dy = max(((x, y) for x in range(dx0 - 15, dx0 + 16) for y in range(dy0 - 3, dy0 + 4)), key=lambda s: overlap(*s))
+    for part, (px, py), dst in ((left, (0, 0), dst1), (right, (dx * 4, dy * 4), dst2)):
+        canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+        canvas.alpha_composite(part, (max(px, 0), max(py, 0)), (max(-px, 0), max(-py, 0)))
+        canvas.save(dst)
+
+
 # Every sitting picture: a 640 square, the cat 538 px tall, its paws at
 # y = 576 (90 %, where the drawing's paws are), centred.
 # Asleep: the same, but the ball of fur is 470 px wide.
@@ -144,4 +182,4 @@ def frame(src, dst, kind, *others):
 
 if __name__ == "__main__":
     cmd, *args = sys.argv[1:]
-    {"gemini": gemini, "green": green, "chatgpt": chatgpt, "match": match, "frame": frame}[cmd](*args)
+    {"gemini": gemini, "green": green, "chatgpt": chatgpt, "match": match, "split": split, "frame": frame}[cmd](*args)

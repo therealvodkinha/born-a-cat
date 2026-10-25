@@ -165,13 +165,14 @@ const CAT_PICTURES = {
     kitten: "img/cats/white-kitten.webp",
     old: "img/cats/white-old.webp",
     sleep: "img/cats/white-sleep.webp",
-    walk: ["img/cats/white-walk.webp"],
+    walk: ["img/cats/white-walk-1.webp", "img/cats/white-walk-2.webp"],
   },
   calico: {
     adult: "img/cats/calico-adult.webp",
+    kitten: "img/cats/calico-kitten.webp",
     old: "img/cats/calico-old.webp",
     sleep: "img/cats/calico-sleep.webp",
-    walk: ["img/cats/calico-walk.webp"],
+    walk: ["img/cats/calico-walk-1.webp", "img/cats/calico-walk-2.webp"],
   },
   tuxedo: {
     adult: "img/cats/tuxedo-adult.webp",
@@ -179,6 +180,28 @@ const CAT_PICTURES = {
     old: "img/cats/tuxedo-old.webp",
     sleep: "img/cats/tuxedo-sleep.webp",
     walk: ["img/cats/tuxedo-walk-1.webp", "img/cats/tuxedo-walk-2.webp"],
+  },
+  // the breeds (see BREEDS in stories.js), one coat each
+  persian: {
+    adult: "img/cats/persian-adult.webp",
+    kitten: "img/cats/persian-kitten.webp",
+    old: "img/cats/persian-old.webp",
+    sleep: "img/cats/persian-sleep.webp",
+    walk: ["img/cats/persian-walk-1.webp", "img/cats/persian-walk-2.webp"],
+  },
+  mainecoon: {
+    adult: "img/cats/mainecoon-adult.webp",
+    kitten: "img/cats/mainecoon-kitten.webp",
+    old: "img/cats/mainecoon-old.webp",
+    sleep: "img/cats/mainecoon-sleep.webp",
+    walk: ["img/cats/mainecoon-walk-1.webp", "img/cats/mainecoon-walk-2.webp"],
+  },
+  bobtail: {
+    adult: "img/cats/bobtail-adult.webp",
+    kitten: "img/cats/bobtail-kitten.webp",
+    old: "img/cats/bobtail-old.webp",
+    sleep: "img/cats/bobtail-sleep.webp",
+    walk: ["img/cats/bobtail-walk-1.webp", "img/cats/bobtail-walk-2.webp"],
   },
 };
 
