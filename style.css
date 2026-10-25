@@ -518,26 +518,61 @@ body[data-cond="weak"] .cat { filter: saturate(0.35) brightness(0.96); }
 
 /* How well the cat did with what it was given (see rewards.js). */
 .journey { margin: 1.3em 0 0; padding: 1em 0 0; border-top: 1.5px dashed var(--muted); }
-.stars { font-size: 2rem; letter-spacing: 0.15em; margin: 0; color: var(--muted); }
-.stars span { display: inline-block; }
-.stars .on { color: var(--accent); animation: pop-in 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) backwards; }
-.stars .on:nth-child(2) { animation-delay: 0.25s; }
-.stars .on:nth-child(3) { animation-delay: 0.5s; }
+/* Stars are gold in every city, so they stand out on any colours. */
+.stars { font-size: 2.8rem; line-height: 1; letter-spacing: 0.08em; margin: 0; color: var(--muted); }
+.stars span { display: inline-block; opacity: 0.3; }
+.stars .on {
+  opacity: 1;
+  color: #f2b632;
+  -webkit-text-stroke: 1.5px #9a6a10;
+  text-shadow: 0 0 14px rgba(242, 182, 50, 0.75), 0 2px 0 #9a6a10;
+  animation: star-in 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) backwards, star-shine 2.4s 1.2s ease-in-out infinite;
+}
+.stars .on:nth-child(2) { animation-delay: 0.3s, 1.5s; }
+.stars .on:nth-child(3) { animation-delay: 0.6s, 1.8s; }
+@keyframes star-in { from { opacity: 0; transform: scale(0.2) rotate(-90deg); } }
+@keyframes star-shine { 50% { text-shadow: 0 0 26px rgba(255, 210, 90, 1), 0 2px 0 #9a6a10; transform: scale(1.08); } }
 .journey-line { font-family: var(--title); font-size: 1.05rem; line-height: 1.45; margin: 0.4em 0 0.3em; }
 .score-line { font-size: 0.85rem; color: var(--muted); margin: 0; }
 .score-line .new { color: var(--good); font-weight: 700; }
 .awards { display: flex; flex-direction: column; gap: 6px; margin: 0.8em 0 0; }
 .awards:empty { display: none; }
+/* A new award: a gold badge with a light sweeping across it. */
 .award {
+  position: relative;
+  overflow: hidden;
   margin: 0;
-  font-size: 0.85rem;
-  padding: 0.5em 0.8em;
-  border: 1.5px solid var(--good);
-  border-radius: 8px;
+  padding: 0.6em 0.9em;
+  border: 2px solid #d9a022;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(242, 182, 50, 0.22), rgba(242, 182, 50, 0.05));
   text-align: left;
-  animation: pop-in 0.4s 0.8s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
+  font-size: 0.85rem;
+  animation: pop-in 0.45s 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) backwards;
 }
-.award b { font-family: var(--title); color: var(--good); }
+.award::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 240, 190, 0.35) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: sweep 2.8s 1.4s ease-in-out infinite;
+}
+@keyframes sweep { 40%, 100% { transform: translateX(100%); } }
+.award-new {
+  display: block;
+  font-family: var(--title);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #d9a022;
+}
+.award-title { display: block; font-family: var(--title); font-size: 1.15rem; font-weight: 700; color: var(--ink); margin: 0.1em 0; }
+.award-text { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) {
+  .stars .on, .award::after { animation: none; }
+}
 
 .fact {
   font-size: 0.82rem;
@@ -858,3 +893,4 @@ body.hit::after {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+#breed-line:empty { display: none; }
