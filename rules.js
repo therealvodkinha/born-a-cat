@@ -137,7 +137,7 @@ function chanceOf(choice, life, skill = 0) {
   if (HUMAN_MARKS.includes(choice.goodMark) && !life.marks.has(choice.goodMark)) add(breed.charmWhy, breed.charm);
   const mods = (choice.mods || []).filter((m) => modApplies(m, life));
   for (const m of mods) add(m.why || "", m.chance || 0);
-  add(skill > 0 ? "Good timing" : "Bad timing", skill);
+  add(skill > 0.2 ? "Perfect timing" : skill > 0 ? "Good timing" : "Bad timing", skill);
 
   const total = factors.reduce((sum, f) => sum + f.delta, choice.chance);
   return { chance: clamp(total, 0.05, 0.95), factors, mods };
@@ -157,14 +157,14 @@ function rollChoice(choice, life, skill = 0, rng = Math.random) {
 // In tools/odds.js, players are assumed to be average at them.
 const GESTURES = {
   pounce: { hint: "Tap when the paw is in the gold zone" },
-  hold: { hint: "Hold still. Keep your finger down" },
+  hold: { hint: "Hold still, and let go in the gold" },
   run: { hint: "Tap as fast as you can" },
 };
 
 // What an average player gets from a gesture (used by tools/odds.js).
 function averageSkill(rng = Math.random) {
   const r = rng();
-  return r < 0.35 ? 0.2 : r < 0.7 ? 0.05 : -0.1;
+  return r < 0.35 ? 0.4 : r < 0.7 ? 0.1 : -0.3;
 }
 
 function addStats(life, fx) {

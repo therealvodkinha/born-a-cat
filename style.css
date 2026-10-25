@@ -882,7 +882,9 @@ body.hit::after {
 .hold-btn { position: relative; width: 120px; height: 120px; min-width: 0; border-radius: 50%; padding: 0; display: grid; place-items: center; }
 .hold-btn .ring { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); rotate: -90deg; }
 .hold-btn .ring circle { fill: none; stroke: var(--accent-ink); stroke-opacity: 0.3; stroke-width: 8; }
+.hold-btn .ring .zone { stroke: #f0bf3c; stroke-opacity: 1; stroke-width: 12; }
 .hold-btn .ring .fill { stroke-opacity: 1; stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round; }
+.hold-btn.in-zone .ring .fill { stroke: #f0bf3c; }
 .hold-btn span { position: relative; }
 .hold-btn.holding { transform: translate(3px, 3px) scale(0.97); box-shadow: 1px 1px 0 var(--ink); animation: tremble 0.25s linear infinite; }
 @keyframes tremble { 25% { rotate: -1deg; } 75% { rotate: 1deg; } }

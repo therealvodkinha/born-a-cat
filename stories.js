@@ -31,7 +31,7 @@
 //   bonus    : (optional) chance added or removed for a trait, e.g. { brave: 0.2, shy: -0.2 }
 //   stat     : (optional) "strength" or "health": a strong (or healthy) cat does better
 //   gesture  : (optional) the player must do something to try it, and doing it well helps:
-//              "pounce" (tap at the right moment), "hold" (keep the finger down),
+//              "pounce" (tap at the right moment), "hold" (let go at the right moment),
 //              "run" (tap fast). See GESTURES in rules.js.
 //   mods     : (optional) the same choice works differently for different cats.
 //              A list of { needs / notIf / coat / cond, chance, why, good, bad }:
@@ -185,7 +185,8 @@ const ORIGINS = {
 };
 
 // Breeds. Most cats in the world have none (“mixed”).
-//   coats    : (optional) the coats this breed can have (see COATS in art.js)
+//   coats    : (optional) the coats this breed can have (see COATS in art.js);
+//              one each for now, the one in its pictures (CAT_PICTURES in art.js)
 //   cities   : (optional) only born in these cities
 //   stats    : added to the starting stats
 //   build    : (optional) how big the cat grows (1 = normal)
@@ -201,7 +202,7 @@ const BREEDS = {
   },
   persian: {
     label: "Persian",
-    coats: ["white", "black", "ginger", "calico"],
+    coats: ["white"],
     line: "Persian. Flat face, long fur, the look of a disappointed duchess.",
     stats: { health: -5, happy: 5 },
     physical: -0.1,
@@ -211,7 +212,7 @@ const BREEDS = {
   },
   mainecoon: {
     label: "Maine Coon",
-    coats: ["grey tabby", "ginger", "black", "tuxedo"],
+    coats: ["grey tabby"],
     line: "Maine Coon, the biggest breed of house cat. You will be enormous.",
     stats: { strength: 8 },
     build: 1.3,
@@ -223,7 +224,7 @@ const BREEDS = {
   bobtail: {
     label: "Japanese Bobtail",
     cities: ["Tokyo"],
-    coats: ["calico", "white", "black", "tuxedo"],
+    coats: ["calico"],
     line: "Japanese Bobtail. A pom-pom tail, like the lucky cat in shop windows.",
     stats: { strength: 3 },
     physical: 0.05,
