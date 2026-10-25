@@ -793,6 +793,34 @@ body[data-tone="night"] .horizon { opacity: 0.25; }
 .cat-card .mini-cat { width: 150px; height: 140px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: center; }
 .cat-card .mini-cat::before { width: 82%; }
 .cat-card .mini-cat .cat { width: 100%; }
+/* Where the event happens (see "scene" in stories.js): a photo pinned a
+   little crooked behind the cat, which stands in front of it. */
+.snapshot { display: none; }
+.cat-card.has-scene .mini-cat { width: 100%; height: 262px; }
+.cat-card.has-scene .mini-cat::before { display: none; }
+.cat-card.has-scene .snapshot {
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 232px;
+  margin: 0;
+  padding: 9px 9px 0;
+  translate: -50% 0;
+  rotate: -2.5deg;
+  background: #fbf7ee;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 3px 5px 12px rgba(0, 0, 0, 0.25);
+}
+.snapshot img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #d8cdbb; }
+.snapshot figcaption { font: italic 500 14px/1 var(--title); color: #6b5b4b; text-align: right; padding: 7px 6px 9px; }
+.cat-card.has-scene .mini-cat .cat { position: absolute; inset: auto auto 36px 50%; width: 112px; translate: -80% 0; z-index: 2; }
+/* small phones: a smaller photo, so the choices stay on the screen */
+@media (max-height: 700px) {
+  .cat-card.has-scene .mini-cat { height: 222px; }
+  .cat-card.has-scene .snapshot { width: 194px; padding: 8px 8px 0; }
+  .snapshot figcaption { font-size: 12px; padding: 6px 4px 8px; }
+  .cat-card.has-scene .mini-cat .cat { width: 96px; bottom: 30px; }
+}
 .gauges { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; }
 .gauges .card-name, .gauges .g-body { grid-column: 1 / -1; text-align: center; }
 .gauge { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name delta" "bar bar"; align-items: end; gap: 2px 4px; }
@@ -924,3 +952,35 @@ body.hit::after {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 #breed-line:empty { display: none; }
+
+/* A cat with a breed: its name in gold, at birth, on its card all through
+   its life, and on the ending card. */
+.breed-tag {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  margin-left: 0.5em;
+  padding: 0.2em 0.75em;
+  border: 2px solid #2a211c;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f7d877, #e0a92a);
+  color: #2a211c;
+  font-family: var(--title);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  vertical-align: 0.2em;
+}
+.breed-tag:empty { display: none; }
+.breed-tag::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 250, 225, 0.7) 50%, transparent 65%);
+  transform: translateX(-100%);
+  animation: sweep 3.2s 1s ease-in-out infinite;
+}
+#breed-line .breed-tag { display: table; margin: 0.2em auto 0.45em; font-size: 0.95rem; }
+.breed-word { color: #b07d12; font-weight: 700; }

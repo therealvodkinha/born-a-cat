@@ -89,8 +89,9 @@ const GAUGES = [
 
 function buildCard(card) {
   card.innerHTML =
-    `<div class="mini-cat cat-slot">${CAT_PICTURE}${CAT_SVG}<div class="hearts"></div></div>` +
-    `<div class="gauges"><p class="card-name"></p>` +
+    `<div class="mini-cat cat-slot"><figure class="snapshot"><img alt=""><figcaption></figcaption></figure>` +
+    `${CAT_PICTURE}${CAT_SVG}<div class="hearts"></div></div>` +
+    `<div class="gauges"><p class="card-name"><span class="name"></span><span class="breed-tag"></span></p>` +
     GAUGES.map(
       (g) =>
         `<div class="gauge" data-k="${g.key}"><span class="g-name">${g.name}</span>` +
@@ -103,7 +104,8 @@ function buildCard(card) {
 // Updates a card. With "change", the gauges first show the old values,
 // then slide to the new ones, with the difference popping up.
 function updateCard(card, change) {
-  card.querySelector(".card-name").textContent = life.name;
+  card.querySelector(".card-name .name").textContent = life.name;
+  card.querySelector(".breed-tag").textContent = life.breed === "mixed" ? "" : BREEDS[life.breed].label;
   const set = () => {
     for (const g of GAUGES) {
       const v = life.stats[g.key];
@@ -259,7 +261,9 @@ function beBorn() {
     })
   );
   document.getElementById("origin-line").textContent = STORIES[life.city].origins[life.origin];
-  document.getElementById("breed-line").textContent = BREEDS[life.breed].line;
+  // a cat with a breed gets its name in gold
+  document.getElementById("breed-line").innerHTML =
+    life.breed === "mixed" ? "" : `<span class="breed-tag">${BREEDS[life.breed].label}</span>${BREEDS[life.breed].line}`;
   document.getElementById("coat-line").textContent = COAT_LINES[coat.id] || "";
   rollOrigin();
   document.getElementById("trait-line").textContent = life.trait.line;
@@ -311,6 +315,7 @@ function startStep() {
   const step = stepOf(life);
   const prev = life.step === 0 ? null : STEPS[life.step - 1];
   const newChapter = !prev || prev.chapter !== step.chapter;
+  if (!prev) loadScenes();
   beginStep(life);
   showState();
   setLook("mood", "awake");
@@ -368,6 +373,25 @@ screens.time.addEventListener("click", (e) => {
   else showEvent();
 });
 
+// Where an event happens (its "scene" in stories.js), like a photo behind
+// the cat, while the player chooses. Without one, the card shows the cat
+// alone, as on the outcome, which has enough to show already.
+function showScene(card, event) {
+  card.classList.toggle("has-scene", !!event.scene);
+  if (!event.scene) return;
+  const img = card.querySelector(".snapshot img");
+  const src = sceneSrc(event.scene);
+  if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+  card.querySelector(".snapshot figcaption").textContent = `${STORIES[life.city].scenes[event.scene]}, ${life.city}`;
+}
+const sceneSrc = (id) => `img/scenes/${life.city.toLowerCase()}-${id}.webp`;
+
+// The city's scenes are loaded while the cat grows up, so that each photo
+// is there at once when its event comes.
+function loadScenes() {
+  for (const id in STORIES[life.city].scenes) new Image().src = sceneSrc(id);
+}
+
 function showEvent() {
   clearTimeout(startStep.timer);
   clearTimeout(startStep.swap);
@@ -382,6 +406,7 @@ function showEvent() {
     .map((s, n) => PAW_SVG.replace("<svg", `<svg class="${n < life.step ? "done" : "now"}"`))
     .join("");
   updateCard(document.getElementById("event-card"));
+  showScene(document.getElementById("event-card"), event);
   document.getElementById("status").innerHTML = statePills();
 
   const box = document.getElementById("choices");
@@ -719,8 +744,11 @@ function showEnding() {
   card.dataset.rarity = rarity;
   document.getElementById("rarity").textContent =
     { common: "Ending", uncommon: "Uncommon ending", rare: "★ Rare ending ★", legendary: "★ Legendary ending ★" }[rarity];
-  const kind = (life.breed === "mixed" ? "" : BREEDS[life.breed].label + " ") + ORIGINS[life.origin].label.toLowerCase();
-  document.getElementById("end-city").textContent = `${life.name}, ${kind}, born in ${life.city}`;
+  const breed = life.breed === "mixed" ? "" : BREEDS[life.breed].label;
+  const origin = ORIGINS[life.origin].label.toLowerCase();
+  const kind = breed ? `${breed} ${origin}` : origin;
+  document.getElementById("end-city").innerHTML =
+    `${life.name}, ${breed ? `<span class="breed-word">${breed}</span> ` : ""}${origin}, born in ${life.city}`;
   document.getElementById("ending-title").textContent = ending.title;
   document.getElementById("odds").innerHTML = oddsLine(odds);
   document.getElementById("end-life").innerHTML =
@@ -757,7 +785,7 @@ function showEnding() {
     title: ending.title,
     rarity,
     odds: oddsLine(odds).replace(/<[^>]+>/g, ""),
-    born: `${ORIGINS[life.origin].label.toLowerCase()}, born in ${life.city}`,
+    born: `${kind}, born in ${life.city}`,
     lived: `${"★".repeat(reward.stars)}${"☆".repeat(3 - reward.stars)} · Lived ${ageAtDeath(life)} · ${weightOf(life).toFixed(1)} kg`,
     marks: [...life.marks].map((m) => MARKS[m]).filter(Boolean),
   };
