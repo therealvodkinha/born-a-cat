@@ -5,12 +5,18 @@
                                                    Gemini paints a fake checkerboard behind
                                                    the cat: it is cleared from the edges in,
                                                    and from the points given (gaps inside the cat)
+  python3 tools/cutout.py green IN.jpg OUT.png [x,y ...]
+                                                   a flat green background (green screen),
+                                                   cleared the same way
   python3 tools/cutout.py chatgpt IN.png OUT.png   ChatGPT gives real transparency, but
                                                    half see-through: it is made solid
   python3 tools/cutout.py match IN.png REF.png OUT.png
                                                    makes IN as light or dark as REF (another
                                                    picture of the same cat)
-  python3 tools/cutout.py frame IN.png img/cats/OUT.webp sit|sleep|walk
+  python3 tools/cutout.py frame IN.png img/cats/OUT.webp sit|sleep|walk [OTHER.png ...]
+                                                   with OTHER pictures (the other walking
+                                                   picture), both are cut the same, so they
+                                                   line up when shown in turn
 """
 import sys
 from collections import deque
@@ -21,9 +27,20 @@ from PIL import Image, ImageFilter
 
 def gemini(src, dst, *holes):
     rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.int16)
-    h, w, _ = rgb.shape
     mx, mn = rgb.max(2), rgb.min(2)
-    bg_like = ((mx - mn) < 22) & (mn > 185)
+    cut(rgb, dst, ((mx - mn) < 22) & (mn > 185), holes)
+
+
+def green(src, dst, *holes):
+    rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.int16)
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    cut(rgb, dst, (g - np.maximum(r, b) > 40) & (g > 90), holes, despill=True)
+
+
+# Clears the background ("bg_like" pixels reached from the edges or from the
+# points given), then cleans the edge of the cat.
+def cut(rgb, dst, bg_like, holes, despill=False):
+    h, w, _ = rgb.shape
     seen = np.zeros((h, w), bool)
     q = deque()
     for x in range(w):
@@ -68,6 +85,10 @@ def gemini(src, dst, *holes):
     est = np.stack([blur(col[..., c] * m) for c in range(3)], 2) / np.maximum(weight, 1e-3)[..., None]
     band = (m == 0) & (weight > 0.02)
     col[band] = est[band]
+    if despill:  # green left in the hairs outside the fur: made grey
+        out_of_fur = m < 1
+        rb = np.maximum(col[..., 0], col[..., 2])
+        col[..., 1] = np.where(out_of_fur, np.minimum(col[..., 1], rb + 6), col[..., 1])
     alpha = np.asarray(mask.filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32)
     alpha[band] *= 0.9
     out = np.dstack([np.clip(col, 0, 255), alpha]).astype(np.uint8)
@@ -98,10 +119,10 @@ def match(src, ref, dst):
 # y = 576 (90 %, where the drawing's paws are), centred.
 # Asleep: the same, but the ball of fur is 470 px wide.
 # Walking: cut tight, 640 px wide, a few px of air around.
-def frame(src, dst, kind):
-    im = Image.open(src).convert("RGBA")
-    solid = im.getchannel("A").point(lambda a: 255 if a > 40 else 0)
-    im = im.crop(solid.getbbox())
+def frame(src, dst, kind, *others):
+    boxes = [Image.open(f).getchannel("A").point(lambda a: 255 if a > 40 else 0).getbbox() for f in (src, *others)]
+    box = (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
+    im = Image.open(src).convert("RGBA").crop(box)
     if kind == "walk":
         scale = 620 / im.width
         im = im.resize((620, round(im.height * scale)), Image.LANCZOS)
@@ -117,4 +138,4 @@ def frame(src, dst, kind):
 
 if __name__ == "__main__":
     cmd, *args = sys.argv[1:]
-    {"gemini": gemini, "chatgpt": chatgpt, "match": match, "frame": frame}[cmd](*args)
+    {"gemini": gemini, "green": green, "chatgpt": chatgpt, "match": match, "frame": frame}[cmd](*args)

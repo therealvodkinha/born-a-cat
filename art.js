@@ -152,6 +152,13 @@ const CAT_PICTURES = {
     sleep: "img/cats/black-sleep.webp",
     walk: ["img/cats/black-walk.webp"],
   },
+  "grey tabby": {
+    adult: "img/cats/grey-tabby-adult.webp",
+    kitten: "img/cats/grey-tabby-kitten.webp",
+    old: "img/cats/grey-tabby-old.webp",
+    sleep: "img/cats/grey-tabby-sleep.webp",
+    walk: ["img/cats/grey-tabby-walk-1.webp", "img/cats/grey-tabby-walk-2.webp"],
+  },
 };
 
 // Where the painted picture goes, next to the drawing (see showPicture in game.js).
