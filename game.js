@@ -232,7 +232,6 @@ function beBorn() {
       return span;
     })
   );
-  document.getElementById("city-line").textContent = STORIES[life.city].line;
   document.getElementById("origin-line").textContent = STORIES[life.city].origins[life.origin];
   document.getElementById("breed-line").textContent = BREEDS[life.breed].line;
   document.getElementById("coat-line").textContent = COAT_LINES[coat.id] || "";
@@ -700,7 +699,11 @@ function showEnding() {
     `Life score <strong>${reward.score}</strong> · ` +
     (reward.record ? `<span class="new">New record for a ${born}!</span>` : `Best for a ${born}: ${reward.best}`);
   document.getElementById("awards").innerHTML = reward.newAwards
-    .map((a) => `<p class="award"><b>New award: ${a.title}</b> · ${a.text}</p>`)
+    .map(
+      (a) =>
+        `<p class="award"><span class="award-new">★ New award</span>` +
+        `<span class="award-title">${a.title}</span><span class="award-text">${a.text}</span></p>`
+    )
     .join("");
   document.getElementById("fact").innerHTML = fact
     ? `<b>Real cats</b><br>${fact.text}<br><a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`

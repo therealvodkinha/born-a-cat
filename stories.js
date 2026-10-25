@@ -193,8 +193,8 @@ const ORIGINS = {
 //   charm    : chance added to choices that win a human (a home, a friend)
 const BREEDS = {
   mixed: {
-    label: "No breed",
-    line: "No breed. A bit of everything, like most cats on Earth. Tougher for it.",
+    label: "No breed", // no line: most cats have no breed, nothing to say
+    line: "",
     stats: { health: 5 },
     physical: 0,
     charm: 0,
@@ -202,7 +202,7 @@ const BREEDS = {
   persian: {
     label: "Persian",
     coats: ["white", "black", "ginger", "calico"],
-    line: "Persian. Long fur, flat face, the look of a disappointed duchess. That short nose makes running hard work.",
+    line: "Persian. Flat face, long fur, the look of a disappointed duchess.",
     stats: { health: -5, happy: 5 },
     physical: -0.1,
     physicalWhy: "Flat face, short breath",
@@ -212,7 +212,7 @@ const BREEDS = {
   mainecoon: {
     label: "Maine Coon",
     coats: ["grey tabby", "ginger", "black", "tuxedo"],
-    line: "Maine Coon, the biggest breed of house cat. Paws like slippers, tufts on your ears. You will be enormous.",
+    line: "Maine Coon, the biggest breed of house cat. You will be enormous.",
     stats: { strength: 8 },
     build: 1.3,
     physical: 0.1,
@@ -224,7 +224,7 @@ const BREEDS = {
     label: "Japanese Bobtail",
     cities: ["Tokyo"],
     coats: ["calico", "white", "black", "tuxedo"],
-    line: "Japanese Bobtail. Your tail is a little pom-pom. The lucky cat waving in every shop window looks like you.",
+    line: "Japanese Bobtail. A pom-pom tail, like the lucky cat in shop windows.",
     stats: { strength: 3 },
     physical: 0.05,
     physicalWhy: "Quick on your feet",
@@ -264,9 +264,9 @@ const STORIES = {
   Rabat: {
     line: "Warm stones, the smell of the sea, and a hundred cats who all think they own the place.",
     origins: {
-      street: "In a cardboard box behind a bakery. Your mother is somewhere. Probably.",
-      shelter: "In a shelter on the edge of the city. Clean blankets, forty dogs next door, and a volunteer who sings badly.",
-      home: "In a laundry basket, in a house with a garden. You have a family before you have teeth.",
+      street: "A cardboard box behind a bakery. Your mother is somewhere. Probably.",
+      shelter: "A shelter cage. Clean blankets, and forty dogs next door.",
+      home: "A laundry basket in a house. A family before you have teeth.",
     },
     chapters: {
       // --------------------------------------------------------
@@ -1258,9 +1258,9 @@ const STORIES = {
   Tokyo: {
     line: "Neon lights, quiet alleys, and fourteen million people too polite to chase you.",
     origins: {
-      street: "In a box behind a convenience store, at 2 a.m. The neon sign buzzes all night.",
-      shelter: "In the spare room of a cat rescue group. Thirty volunteers already have a group chat about you.",
-      home: "In a closet in a small apartment, on a pile of sweaters. Someone has already bought you a bed you will never use.",
+      street: "A box behind a convenience store, at 2 a.m.",
+      shelter: "A rescue group’s spare room. Thirty volunteers, one group chat about you.",
+      home: "A closet full of sweaters, in a small apartment. Your bed is already bought. You will never use it.",
     },
     chapters: {
       // --------------------------------------------------------
