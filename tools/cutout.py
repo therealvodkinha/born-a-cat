@@ -1,10 +1,15 @@
 """Cut a cat out of a generated picture, then frame it for the game
 (see CAT_PICTURES in art.js). Needs Python 3 with Pillow and numpy.
 
-  python3 tools/cutout.py gemini IN.jpg OUT.png    Gemini paints a fake checkerboard behind
-                                                   the cat: it is cleared from the edges in
+  python3 tools/cutout.py gemini IN.jpg OUT.png [x,y ...]
+                                                   Gemini paints a fake checkerboard behind
+                                                   the cat: it is cleared from the edges in,
+                                                   and from the points given (gaps inside the cat)
   python3 tools/cutout.py chatgpt IN.png OUT.png   ChatGPT gives real transparency, but
                                                    half see-through: it is made solid
+  python3 tools/cutout.py match IN.png REF.png OUT.png
+                                                   makes IN as light or dark as REF (another
+                                                   picture of the same cat)
   python3 tools/cutout.py frame IN.png img/cats/OUT.webp sit|sleep|walk
 """
 import sys
@@ -14,7 +19,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 
-def gemini(src, dst):
+def gemini(src, dst, *holes):
     rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.int16)
     h, w, _ = rgb.shape
     mx, mn = rgb.max(2), rgb.min(2)
@@ -31,6 +36,13 @@ def gemini(src, dst):
             if bg_like[y, x] and not seen[y, x]:
                 seen[y, x] = True
                 q.append((y, x))
+    # background seen through a gap inside the cat (between a leg and the
+    # tail): its points are given by hand, as "x,y"
+    for hole in holes:
+        x, y = map(int, hole.split(","))
+        if bg_like[y, x] and not seen[y, x]:
+            seen[y, x] = True
+            q.append((y, x))
     while q:
         y, x = q.popleft()
         for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
@@ -69,6 +81,19 @@ def chatgpt(src, dst):
     im.save(dst)
 
 
+def match(src, ref, dst):
+    lum = lambda a: 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
+    a = np.asarray(Image.open(src).convert("RGBA")).astype(np.float32)
+    r = np.asarray(Image.open(ref).convert("RGBA")).astype(np.float32)
+    steps = np.linspace(0, 1, 257)
+    have = np.quantile(lum(a)[a[..., 3] > 200], steps)
+    want = np.quantile(lum(r)[r[..., 3] > 200], steps)
+    light = lum(a)
+    ratio = np.interp(light, have, want) / np.maximum(light, 1)
+    a[..., :3] = np.clip(a[..., :3] * ratio[..., None], 0, 255)
+    Image.fromarray(a.astype(np.uint8), "RGBA").save(dst)
+
+
 # Every sitting picture: a 640 square, the cat 538 px tall, its paws at
 # y = 576 (90 %, where the drawing's paws are), centred.
 # Asleep: the same, but the ball of fur is 470 px wide.
@@ -92,4 +117,4 @@ def frame(src, dst, kind):
 
 if __name__ == "__main__":
     cmd, *args = sys.argv[1:]
-    {"gemini": gemini, "chatgpt": chatgpt, "frame": frame}[cmd](*args)
+    {"gemini": gemini, "chatgpt": chatgpt, "match": match, "frame": frame}[cmd](*args)
