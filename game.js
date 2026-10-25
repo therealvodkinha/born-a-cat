@@ -26,6 +26,31 @@ function show(name) {
 function setLook(key, value) {
   if (value) document.body.dataset[key] = value;
   else delete document.body.dataset[key];
+  if (key === "age" || key === "mood") showPicture();
+}
+
+// The painted pictures of this cat, when its coat has them (see
+// CAT_PICTURES in art.js). Without them, the drawing is shown.
+let pictures = null;
+
+function setPictures(set) {
+  pictures = set || null;
+  setLook("pictures", pictures ? "on" : null);
+  if (pictures) Object.values(pictures).flat().forEach((src) => (new Image().src = src)); // ready before they are needed
+}
+
+// The picture that fits how the cat is now: asleep, or awake at its age.
+function showPicture() {
+  if (!pictures) return;
+  const { age, mood } = document.body.dataset;
+  const src = (mood === "asleep" && pictures.sleep) || pictures[age] || pictures.adult;
+  document.querySelectorAll(".cat-picture").forEach((img) => img.getAttribute("src") !== src && img.setAttribute("src", src));
+}
+
+// The cat walking: its pictures, or the drawing.
+function walkingCat() {
+  if (!pictures) return WALK_SVG;
+  return `<div class="walk-pictures">${pictures.walk.map((src) => `<img class="walk-picture" src="${src}" alt="">`).join("")}</div>`;
 }
 
 // Shows what happened to the cat: on the drawing, and as little stamps.
@@ -64,7 +89,7 @@ const GAUGES = [
 
 function buildCard(card) {
   card.innerHTML =
-    `<div class="mini-cat cat-slot">${CAT_SVG}<div class="hearts"></div></div>` +
+    `<div class="mini-cat cat-slot">${CAT_PICTURE}${CAT_SVG}<div class="hearts"></div></div>` +
     `<div class="gauges"><p class="card-name"></p>` +
     GAUGES.map(
       (g) =>
@@ -210,6 +235,7 @@ function beBorn() {
   [life.name, life.nameMeaning] = nameFor(life.city, coat.id);
 
   document.body.style.cssText = coatStyle(coat);
+  setPictures(CAT_PICTURES[life.breed === "mixed" ? life.coat : life.breed]);
   setLook("coat", coat.id);
   setLook("city", life.city);
   setLook("mood", "awake");
@@ -252,6 +278,8 @@ function rollOrigin() {
   const stamp = document.getElementById("origin-stamp");
   const odds = document.getElementById("origin-odds");
   const ids = Object.keys(ORIGINS);
+  clearInterval(rollOrigin.timer); // a roll still going (born again quickly) stops here
+  clearTimeout(rollOrigin.stop);
   const land = () => {
     clearInterval(rollOrigin.timer);
     clearTimeout(rollOrigin.stop);
@@ -297,7 +325,7 @@ function startStep() {
   document.getElementById("time-fact").innerHTML = fact
     ? `<b>Did you know?</b><br>${fact.text}<br><a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
     : "";
-  document.querySelector("#time .walker").innerHTML = WALK_SVG; // restarts the walk
+  document.querySelector("#time .walker").innerHTML = walkingCat(); // restarts the walk
   screen.classList.add("waiting");
   show("time");
   SOUND.mood("day");
@@ -733,9 +761,11 @@ function showEnding() {
 }
 
 // Draw the cat everywhere it appears, with a coat for the home screen.
-document.querySelectorAll(".cat-slot").forEach((slot) => (slot.innerHTML = CAT_SVG));
+document.querySelectorAll(".cat-slot").forEach((slot) => (slot.innerHTML = CAT_PICTURE + CAT_SVG));
 document.querySelectorAll(".cat-card").forEach(buildCard);
 document.body.style.cssText = coatStyle(COATS[0]);
+setPictures(CAT_PICTURES[COATS[0].id]);
+showPicture();
 
 document.getElementById("born-btn").addEventListener("click", beBorn);
 document.getElementById("again-btn").addEventListener("click", beBorn);

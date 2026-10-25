@@ -1,6 +1,6 @@
 // Drawings for the game: the cat, the coats it can be born with, and the
-// city skylines. Everything is drawn in SVG, so there are no image files.
-// These are placeholders until the real illustrations arrive.
+// city skylines, drawn in SVG. Some coats also have painted pictures of the
+// cat (see CAT_PICTURES below), shown instead of the drawing.
 
 // Each coat sets the colours used by the cat drawing below.
 const COATS = [
@@ -130,6 +130,25 @@ const WALK_SVG = `
     <ellipse class="acc acc-old" cx="126" cy="41" rx="6" ry="4"/>
   </g>
 </svg>`;
+
+// Painted pictures of the cat, in img/cats/. A coat (or a breed, for a cat
+// with a breed) that has them shows them instead of the drawings above. The
+// others keep the drawings until their pictures are made.
+//   adult, kitten, old : sitting, at each age (a 640 square, paws at 90 %)
+//   sleep              : asleep, curled up
+//   walk               : walking to the right; two pictures are shown in turn
+const CAT_PICTURES = {
+  ginger: {
+    adult: "img/cats/ginger-adult.webp",
+    kitten: "img/cats/ginger-kitten.webp",
+    old: "img/cats/ginger-old.webp",
+    sleep: "img/cats/ginger-sleep.webp",
+    walk: ["img/cats/ginger-walk.webp"],
+  },
+};
+
+// Where the painted picture goes, next to the drawing (see showPicture in game.js).
+const CAT_PICTURE = `<img class="cat cat-picture" alt="">`;
 
 // Small paw print, used to show how far along the life is.
 const PAW_SVG = `
