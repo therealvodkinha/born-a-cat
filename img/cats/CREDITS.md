@@ -9,7 +9,7 @@ Generated with AI image tools for this game, then cut out and framed
 | ginger-kitten.webp | ChatGPT |
 | ginger-old.webp | Gemini |
 | ginger-sleep.webp | Gemini |
-| ginger-walk.webp | Gemini |
+| ginger-walk-1/2.webp | Gemini |
 | black-*.webp | Gemini (black-sleep made darker to match) |
 | grey-tabby-*.webp | Gemini (on a green background) |
 

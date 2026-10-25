@@ -143,7 +143,7 @@ const CAT_PICTURES = {
     kitten: "img/cats/ginger-kitten.webp",
     old: "img/cats/ginger-old.webp",
     sleep: "img/cats/ginger-sleep.webp",
-    walk: ["img/cats/ginger-walk.webp"],
+    walk: ["img/cats/ginger-walk-1.webp", "img/cats/ginger-walk-2.webp"],
   },
   black: {
     adult: "img/cats/black-adult.webp",

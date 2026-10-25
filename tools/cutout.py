@@ -1,7 +1,7 @@
 """Cut a cat out of a generated picture, then frame it for the game
 (see CAT_PICTURES in art.js). Needs Python 3 with Pillow and numpy.
 
-  python3 tools/cutout.py gemini IN.jpg OUT.png [x,y ...]
+  python3 tools/cutout.py gemini IN.jpg OUT.png [grey=8] [x,y ...]
                                                    Gemini paints a fake checkerboard behind
                                                    the cat: it is cleared from the edges in,
                                                    and from the points given (gaps inside the cat)
@@ -28,7 +28,13 @@ from PIL import Image, ImageFilter
 def gemini(src, dst, *holes):
     rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.int16)
     mx, mn = rgb.max(2), rgb.min(2)
-    cut(rgb, dst, ((mx - mn) < 22) & (mn > 185), holes)
+    # the checkerboard is pure grey; "grey=8" is stricter, for a cat whose
+    # white chest touches the edge and would be cleared with it
+    grey = 22
+    if holes and holes[0].startswith("grey="):
+        grey = int(holes[0][5:])
+        holes = holes[1:]
+    cut(rgb, dst, ((mx - mn) < grey) & (mn > 185), holes)
 
 
 def green(src, dst, *holes):
