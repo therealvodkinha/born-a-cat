@@ -20,6 +20,9 @@
   --grain-opacity: 0.32;
   --title: "Fraunces", Georgia, serif;
   --text: "Literata", Georgia, serif;
+  /* the space around the page, which the big paintings go over */
+  --pad-top: 24px;
+  --pad-bottom: 64px;
 }
 
 /* Rabat: lime-washed walls, Oudaya blue, ochre sun. */
@@ -66,7 +69,7 @@ body[data-tone="bad"] { --disc: #b7b3c4; }
    ============================================================ */
 * { box-sizing: border-box; }
 
-html { background: var(--bg); }
+html { background: var(--bg); overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -78,7 +81,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 18px 110px;
+  padding: var(--pad-top) 18px var(--pad-bottom);
+  overflow-x: clip; /* a stamp landing big must not make the page wider */
   transition: background-color 0.8s ease, color 0.8s ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -117,12 +121,13 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 92px;
+  height: 46px;
   pointer-events: none;
   opacity: 0;
   transition: opacity 1s ease;
 }
-body[data-city] .horizon { opacity: 0.9; }
+/* thin and pale: it says which city, the paintings above say the rest */
+body[data-city] .horizon { opacity: 0.35; }
 .horizon .skyline { width: 100%; height: 100%; display: block; }
 
 /* ============================================================
@@ -163,13 +168,50 @@ h2 { font-size: clamp(2.8rem, 14vw, 4rem); margin: 0.05em 0 0.3em; color: var(--
 .tagline { font-size: 1.12rem; line-height: 1.55; margin: 0.5em auto; max-width: 30ch; }
 .trait { font-style: italic; color: var(--muted); }
 
-/* The cat's name, given at birth (see names.js). */
-.cat-name { font-family: var(--title); font-size: 1.35rem; margin: 1em 0 0; animation: enter 0.6s 0.8s both; }
-.cat-name strong { color: var(--accent); font-size: 1.25em; font-weight: 700; }
-.cat-name + .trait { margin-top: 0.2em; }
+/* ============================================================
+   Birth: the cat's passport. The only screen that looks like a
+   document, before the paintings of its life.
+   ============================================================ */
+.papers {
+  position: relative;
+  margin-top: 40px; /* clear of the sound button */
+  overflow: hidden;
+  text-align: left;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 13px, color-mix(in srgb, var(--accent) 6%, transparent) 13px 14px),
+    var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 5px 0 var(--ink);
+  animation: enter 0.6s both;
+}
+.papers-head {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0.6em 1.1em;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 700 0.7rem var(--title);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.papers-main { display: grid; grid-template-columns: 128px 1fr; gap: 16px; padding: 16px 16px 0; }
+/* the photo: the kitten in front of the place it was born */
+.id-photo { position: relative; margin: 0; height: 164px; overflow: hidden; border: 2px solid var(--ink); border-radius: 8px; background: #d8cdbb; }
+.id-scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 85%; }
+.id-cat { position: absolute; left: 50%; bottom: 0; width: 150px; translate: -50% 0; }
+.id-cat .cat { width: 100%; }
+.field { font: 700 0.64rem var(--title); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 0; }
+#birth h2 { font-size: 2.6rem; margin: 0 0 0.3em; }
+.cat-name { font: 800 1.6rem/1.1 var(--title); color: var(--accent); margin: 0; animation: enter 0.6s 0.6s both; }
+.name-meaning { font-size: 0.84rem; line-height: 1.35; font-style: italic; color: var(--muted); margin: 0.25em 0 0; animation: enter 0.6s 0.7s both; }
+.id-rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 16px 0; padding: 10px 0 0; border-top: 1.5px dashed var(--muted); }
+.id-rows dd { margin: 3px 0 0; font: 700 1rem var(--title); text-transform: capitalize; }
+.id-rows .breed-tag { margin: 0; font-size: 0.66rem; }
 
 /* Where the cat was born: drawn like a lottery, then stamped. */
-.origin { margin: 1.1em 0 0.2em; animation: enter 0.6s 1s both; }
+.origin { margin: 16px 16px 0; text-align: center; }
 .origin-stamp {
   display: inline-block;
   font-family: var(--title);
@@ -188,8 +230,19 @@ h2 { font-size: clamp(2.8rem, 14vw, 4rem); margin: 0.05em 0 0.3em; color: var(--
 .origin.landed .origin-stamp { animation: stamp 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
 @keyframes stamp { from { transform: scale(1.8); opacity: 0; } }
 .origin-odds { font-family: var(--title); font-size: 0.85rem; color: var(--muted); margin: 0.5em 0 0; min-height: 1.3em; }
-.origin.rolling ~ .origin-line, .origin.rolling ~ #breed-line, .origin.rolling ~ #coat-line, .origin.rolling ~ #trait-line, .origin.rolling ~ .actions { visibility: hidden; }
-.origin-line { font-weight: 600; }
+.origin-line { margin: 8px 18px 0; font-size: 1.02rem; line-height: 1.45; font-style: italic; text-align: center; }
+/* the two lines of letters at the bottom of a passport */
+.mrz {
+  margin: 14px 0 0;
+  padding: 8px 16px 10px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  font: 600 0.78rem/1.5 ui-monospace, "Courier New", monospace;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  white-space: pre;
+  overflow: hidden;
+}
+#birth.rolling .origin-line, #birth.rolling .mrz, #birth.rolling .actions { visibility: hidden; }
 
 .label {
   font-family: var(--title);
@@ -294,15 +347,6 @@ button.secondary {
   animation: breathe 6s ease-in-out infinite;
 }
 @keyframes breathe { 50% { scale: 1.04; } }
-
-.scene-city {
-  position: absolute;
-  inset: auto 0 6px;
-  height: 70px;
-  border-radius: 0 0 50% 50% / 0 0 20% 20%;
-  overflow: hidden;
-}
-.scene-city .skyline { width: 100%; height: 100%; display: block; }
 
 .scene .cat-slot {
   position: absolute;
@@ -512,20 +556,47 @@ body[data-pictures] svg.cat:not(.walk-cat) > :not(.acc-heart, .acc-sparkles) { d
   border: 2px solid var(--ink);
   border-radius: 6px 14px 8px 16px;
   box-shadow: 6px 6px 0 var(--ink);
-  padding: 1.4em 1.3em 1.2em;
+  padding: 0;
   overflow: hidden;
 }
-.end-card .scene.small { margin-top: 0.4em; }
+/* the last place of its life, with the cat asleep in it */
+.end-card .end-hero { margin: 0; height: 290px; }
+.end-card .end-hero::after { background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent 30%, transparent 78%, var(--card)); }
+.end-hero .hero-cat { bottom: 12px; width: 200px; }
+.end-body { padding: 0.2em 1.3em 1.2em; }
+/* always there, at the bottom of the screen */
+.end-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7em;
+  margin: 0.6em -18px calc(-1 * var(--pad-bottom));
+  padding: 1.6em 18px calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg) 40%);
+}
+.end-actions .share-note { flex-basis: 100%; margin: 0 auto; text-align: center; }
+.end-actions button.secondary { background: var(--bg); }
 .end-card .story { font-size: 1.05rem; }
 
 .rarity {
-  display: inline-block;
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  left: 14px;
+  padding: 0.35em 0.9em;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  rotate: -3deg;
   font-family: var(--title);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--ink);
   margin: 0;
 }
 .odds { font-family: var(--title); font-size: 0.95rem; color: var(--muted); margin: -0.3em 0 1em; }
@@ -712,17 +783,21 @@ body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
 /* ============================================================
    A new chapter of life: its name, big, and the cat's age.
    ============================================================ */
-/* Time passing: the cat walks across the screen while its age changes. */
+/* Time passing: the cat walks across the place of what comes next
+   while its age changes, written big on the painting. */
+#time { animation: enter 0.5s both; }
+#time .hero { height: clamp(300px, 60dvh, 560px); }
+#time .hero::after { background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 45%, transparent 80%, var(--bg)); }
+.time-title { position: absolute; z-index: 3; top: calc(var(--pad-top) + 36px); left: 0; right: 0; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
+#time .time-chapter { color: #fff; }
+#time .time-age { color: #fff; }
 .time-chapter { font-size: 1rem; min-height: 1.3em; animation: enter 0.5s both; }
 .time-age { margin: 0.1em 0 0.2em; min-height: 1em; }
 .time-age .new-age { display: inline-block; animation: drop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
-.road { position: relative; height: 150px; margin: 0.6em -18px 0; overflow: hidden; }
-.road-city { position: absolute; inset: auto 0 18px; height: 70px; opacity: 0.55; }
-.road-city .skyline { width: 100%; height: 100%; display: block; }
-.road::after { content: ""; position: absolute; left: 0; right: 0; bottom: 16px; border-top: 2px dashed var(--muted); opacity: 0.6; }
 .walker {
   position: absolute;
-  bottom: 12px;
+  z-index: 2;
+  bottom: 30px;
   left: 0;
   width: calc(150px * var(--size, 1));
   animation: cross 2.6s linear both;
@@ -745,7 +820,7 @@ body[data-pictures] .walker { width: calc(128px * var(--grown)); }
 @keyframes gait { from { transform: rotate(-0.8deg); } to { transform: translateY(-3px) rotate(0.8deg); } }
 @keyframes frame { 50% { opacity: 0; } }
 body[data-cond="weak"] .walk-picture { filter: saturate(0.35); }
-.did-you-know { max-width: 34ch; margin: 1.2em auto 0; animation: enter 0.6s 2.4s both; }
+.did-you-know { max-width: 34ch; margin: 1em auto 0; animation: enter 0.6s 2.4s both; }
 .did-you-know:empty { display: none; }
 #time, #farewell { cursor: pointer; }
 #time.skipped .walker { display: none; }
@@ -775,74 +850,131 @@ body[data-tone="night"] .horizon { opacity: 0.25; }
 #farewell-3 { animation-delay: 3.2s; margin-top: 1.4em; }
 
 /* ============================================================
-   The cat card: the cat, and its stats as small gauges.
+   The screens of a life: the place, painted big from edge to edge,
+   the cat standing in it, then the words, and the buttons at the
+   bottom, where the thumb is.
    ============================================================ */
-.cat-card {
+.scene-screen:not(.hidden) {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  min-height: calc(100vh - var(--pad-top) - var(--pad-bottom));
+  min-height: calc(100dvh - var(--pad-top) - var(--pad-bottom));
+  animation: none; /* the painting stays put from one screen to the next */
+}
+.hero {
+  position: relative;
+  margin: calc(-1 * var(--pad-top)) -18px 0;
+  height: clamp(240px, 50dvh, 470px);
+  overflow: hidden;
+  background: var(--card);
+}
+.hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 70%; transition: filter 0.8s ease; }
+/* dark at the top for the words written there, and melting into the page at the bottom */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 26%, transparent 80%, var(--bg));
+}
+/* a new place fades in with a slow zoom */
+.hero.arrive .hero-img { animation: arrive 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes arrive { from { opacity: 0; transform: scale(1.08); } }
+/* after a bad outcome, the place loses its colours a little */
+body[data-tone="bad"] .scene-screen .hero-img { filter: saturate(0.55) brightness(0.92); }
+.hero-cat { position: absolute; left: 50%; bottom: 34px; width: 180px; margin: 0; translate: -50% 0; z-index: 2; }
+.hero-cat::before { display: none; }
+.hero-cat .cat { width: 100%; }
+.place {
+  position: absolute;
+  z-index: 3;
+  top: 72px;
+  left: 16px;
+  margin: 0;
+  font: italic 500 0.9rem var(--title);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
+}
+#result .place { top: 22px; }
+
+/* how far along the life is, written on the painting */
+.scene-screen .life {
+  position: absolute;
+  z-index: 4;
+  top: calc(16px - var(--pad-top));
+  left: 0;
+  right: 60px;
+  margin: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.scene-screen .life .label { color: #fff; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
+.scene-screen .paws { justify-content: flex-start; }
+.scene-screen .paws svg { fill: #fff; opacity: 0.45; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6)); }
+.scene-screen .paws svg.done { fill: #fff; opacity: 0.95; }
+.scene-screen .paws svg.now { fill: #f0bf3c; opacity: 1; }
+
+.scene-screen .status { margin: 0.9em 0 0; }
+.scene-screen .factors { margin: 0.9em 0 0; }
+.scene-screen .story { margin: 0.8em 2px 0; }
+.scene-screen .choices, .scene-screen .gesture, .scene-screen .actions { margin-top: auto; padding-top: 1.4em; }
+.cat-card { display: contents; }
+/* small phones: a smaller painting, so the choices and gestures stay on the screen */
+@media (max-height: 720px) {
+  .hero { height: 40dvh; }
+  .hero-cat { width: 150px; bottom: 30px; }
+  .scene-screen .story { font-size: 1.05rem; }
+}
+
+/* The cat's name and its stats, on a strip over the bottom of the painting. */
+.gauges {
+  position: relative;
+  z-index: 3;
+  margin: -30px 0 0;
+  padding: 10px 14px 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 14px;
   background: var(--card);
   border: 2px solid var(--ink);
-  border-radius: 6px 12px 8px 14px;
-  box-shadow: 3px 3px 0 var(--ink);
-  padding: 10px 14px 12px;
-  margin: 0 0 1.2em;
-  rotate: -0.4deg;
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--ink);
 }
-.cat-card .mini-cat { width: 150px; height: 140px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: center; }
-.cat-card .mini-cat::before { width: 82%; }
-.cat-card .mini-cat .cat { width: 100%; }
-/* Where the event happens (see "scene" in stories.js): a photo pinned a
-   little crooked behind the cat, which stands in front of it. */
-.snapshot { display: none; }
-.cat-card.has-scene .mini-cat { width: 100%; height: 262px; }
-.cat-card.has-scene .mini-cat::before { display: none; }
-.cat-card.has-scene .snapshot {
-  display: block;
-  position: absolute;
-  left: 50%;
-  top: 2px;
-  width: 232px;
-  margin: 0;
-  padding: 9px 9px 0;
-  translate: -50% 0;
-  rotate: -2.5deg;
-  background: #fbf7ee;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08), 3px 5px 12px rgba(0, 0, 0, 0.25);
-}
-.snapshot img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #d8cdbb; }
-.snapshot figcaption { font: italic 500 14px/1 var(--title); color: #6b5b4b; text-align: right; padding: 7px 6px 9px; }
-.cat-card.has-scene .mini-cat .cat { position: absolute; inset: auto auto 36px 50%; width: 112px; translate: -80% 0; z-index: 2; }
-/* small phones: a smaller photo, so the choices stay on the screen */
-@media (max-height: 700px) {
-  .cat-card.has-scene .mini-cat { height: 222px; }
-  .cat-card.has-scene .snapshot { width: 194px; padding: 8px 8px 0; }
-  .snapshot figcaption { font-size: 12px; padding: 6px 4px 8px; }
-  .cat-card.has-scene .mini-cat .cat { width: 96px; bottom: 30px; }
-}
-.gauges { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; }
-.gauges .card-name, .gauges .g-body { grid-column: 1 / -1; text-align: center; }
-.gauge { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name delta" "bar bar"; align-items: end; gap: 2px 4px; }
-.gauge .g-name { grid-area: name; }
-.gauge .g-bar { grid-area: bar; }
-.gauge .g-delta { grid-area: delta; }
-.g-name { font-family: var(--title); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: left; }
-.g-bar { height: 9px; border: 1.5px solid var(--ink); border-radius: 99px; overflow: hidden; background: transparent; }
+.card-name { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 0.4em; margin: 0; font-family: var(--title); font-size: 1.25rem; font-weight: 800; text-align: left; }
+.card-name .breed-tag { margin-left: 0.2em; }
+.g-body { margin-left: auto; font-family: var(--title); font-size: 0.82rem; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.g-body .kg-delta { margin-left: 0.4em; }
+.gauge { position: relative; display: flex; align-items: center; gap: 6px; }
+.g-icon { font-size: 1.15rem; line-height: 1; }
+.g-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } /* for screen readers */
+.g-bar { flex: 1; height: 12px; border: 1.5px solid var(--ink); border-radius: 99px; overflow: hidden; background: transparent; }
 .g-bar i { display: block; height: 100%; background: var(--good); border-radius: 99px; transition: width 0.9s cubic-bezier(0.3, 1.2, 0.5, 1), background-color 0.4s; }
 .gauge[data-k="happy"] .g-bar i { background: #e0565b; }
 .gauge[data-k="strength"] .g-bar i { background: #e3913f; }
 .gauge.low .g-bar i { background: var(--muted); }
 .gauge.low .g-bar { animation: warn 1s ease-in-out infinite; }
 @keyframes warn { 50% { border-color: #c9524f; } }
-.g-delta { font-family: var(--title); font-size: 0.85rem; text-align: right; opacity: 0; }
-.g-delta.up, .g-delta.down { animation: float-up 1.6s 0.3s ease-out both; }
+/* when a stat changes, its bar lights up and the number flies out of it */
+.gauge.up .g-bar { animation: lit-up 1.2s 0.3s ease-out; }
+.gauge.down .g-bar { animation: lit-down 1.2s 0.3s ease-out; }
+@keyframes lit-up { 30% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 45%, transparent); } }
+@keyframes lit-down { 30% { box-shadow: 0 0 0 3px rgba(201, 82, 79, 0.45); } }
+.g-delta { font-family: var(--title); font-size: 0.85rem; font-weight: 800; opacity: 0; pointer-events: none; }
+.gauge .g-delta { position: absolute; right: 4px; bottom: 6px; font-size: 1.2rem; text-shadow: 0 0 6px var(--card), 0 0 2px var(--card); }
 .g-delta.up { color: var(--good); }
 .g-delta.down { color: #c9524f; }
+.gauge .g-delta.up, .gauge .g-delta.down { animation: fly-out 2.4s 0.3s ease-out both; }
+@keyframes fly-out {
+  0% { opacity: 0; transform: translateY(6px) scale(0.6); }
+  15% { opacity: 1; transform: translateY(-14px) scale(1.35); }
+  30% { transform: translateY(-20px) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-42px); }
+}
+.kg-delta.up, .kg-delta.down { animation: float-up 1.6s 0.3s ease-out both; }
 @keyframes float-up { 0% { opacity: 0; transform: translateY(8px) scale(0.6); } 20% { opacity: 1; transform: none scale(1.25); } 35% { transform: scale(1); } 100% { opacity: 1; } }
-.card-name { font-family: var(--title); font-size: 1.15rem; font-weight: 700; margin: 0 0 2px; }
-.g-body { font-family: var(--title); font-size: 0.82rem; color: var(--muted); margin: 4px 0 0; }
-.g-body .kg-delta { margin-left: 0.5em; }
 
 /* hearts flying out of the cat when it's happy */
 .mini-cat .hearts { position: absolute; inset: 0; pointer-events: none; }
@@ -886,8 +1018,22 @@ body.hit::after {
 .event-fact b { font-family: var(--title); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.7rem; color: var(--accent); margin-right: 0.3em; }
 .event-fact a { color: inherit; font-size: 0.75rem; }
 
-/* choices that ask for a gesture get a small sign */
-.choices button[data-gesture]::after { content: "  ✦"; color: var(--accent); }
+/* choices that ask for a gesture say which one */
+.choices button { display: flex; align-items: center; gap: 0.4em; }
+.choices button[data-gesture]::after {
+  margin-left: auto;
+  flex: none;
+  padding: 0.3em 0.75em;
+  border: 1.5px solid #2a211c;
+  border-radius: 99px;
+  background: #f0bf3c;
+  color: #2a211c;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.choices button[data-gesture="hold"]::after { content: "✋ Hold"; }
+.choices button[data-gesture="run"]::after { content: "👆 Tap fast"; }
+.choices button[data-gesture="pounce"]::after { content: "🐾 Pounce"; }
 
 .end-life { font-family: var(--title); font-size: 0.9rem; color: var(--muted); margin: -0.6em 0 1em; }
 .end-life strong { color: var(--ink); }
@@ -951,7 +1097,6 @@ body.hit::after {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
-#breed-line:empty { display: none; }
 
 /* A cat with a breed: its name in gold, at birth, on its card all through
    its life, and on the ending card. */
@@ -982,5 +1127,4 @@ body.hit::after {
   transform: translateX(-100%);
   animation: sweep 3.2s 1s ease-in-out infinite;
 }
-#breed-line .breed-tag { display: table; margin: 0.2em auto 0.45em; font-size: 0.95rem; }
 .breed-word { color: #b07d12; font-weight: 700; }

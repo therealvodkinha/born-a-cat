@@ -24,7 +24,8 @@
 //             These events come first when they can happen.
 //   fact    : (optional) a real cat fact from facts.js, shown under the outcome
 //   scene   : (optional) where it happens, one of the city's "scenes": its
-//             painting is shown like a photo behind the cat
+//             painting is shown big behind the cat. Without one, the cat
+//             stays where it was.
 //   choices : the buttons (2 or 3)
 //
 // CHOICE
@@ -272,6 +273,8 @@ const STORIES = {
       shelter: "A shelter cage. Clean blankets, and forty dogs next door.",
       home: "A laundry basket in a house. A family before you have teeth.",
     },
+    // where each of them is painted (one of the "scenes" below)
+    birthScenes: { street: "bakery", shelter: "shelter", home: "home" },
     // the painted places, in img/scenes/rabat-<id>.webp, with the words
     // written under the photo
     scenes: {
@@ -1310,6 +1313,7 @@ const STORIES = {
       shelter: "A rescue group’s spare room. Thirty volunteers, one group chat about you.",
       home: "A closet full of sweaters, in a small apartment. Your bed is already bought. You will never use it.",
     },
+    birthScenes: { street: "konbini", shelter: "shelter", home: "flat" },
     scenes: {
       shelter: "The rescue room",
       flat: "Home",
