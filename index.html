@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-mood="asleep">
+  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
   <div class="horizon" id="horizon" aria-hidden="true"></div>
   <button id="mute-btn" class="mute" type="button" aria-label="Turn sound off">
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -44,43 +45,53 @@
   </main>
 
   <main class="screen hidden" id="birth">
-    <div class="scene">
-      <div class="disc"></div>
-      <div class="scene-city" id="scene-city"></div>
-      <div class="cat-slot"></div>
-    </div>
-    <p class="label">You were born in</p>
-    <h2 id="city-name"></h2>
-    <p class="cat-name" id="name-line"></p>
-    <p id="name-meaning" class="tagline trait"></p>
-    <div class="origin" id="origin">
-      <p class="origin-stamp" id="origin-stamp"></p>
-      <p class="origin-odds" id="origin-odds"></p>
-    </div>
-    <p id="origin-line" class="tagline origin-line"></p>
-    <p id="breed-line" class="tagline trait"></p>
-    <p id="coat-line" class="tagline trait"></p>
-    <p id="trait-line" class="tagline trait"></p>
+    <!-- The cat's papers: who it is, before its life begins. -->
+    <article class="papers">
+      <p class="papers-head"><span>Born a Cat</span><span>Cat passport</span></p>
+      <div class="papers-main">
+        <figure class="id-photo"><img class="id-scene" id="birth-scene" alt=""><div class="id-cat cat-slot"></div></figure>
+        <div class="id-who">
+          <p class="field">Born in</p>
+          <h2 id="city-name"></h2>
+          <p class="field">Name</p>
+          <p class="cat-name" id="name-line"></p>
+          <p class="name-meaning" id="name-meaning"></p>
+        </div>
+      </div>
+      <dl class="id-rows">
+        <div><dt class="field">Coat</dt><dd id="coat-line"></dd></div>
+        <div><dt class="field">Nature</dt><dd id="trait-line"></dd></div>
+        <div><dt class="field">Breed</dt><dd id="breed-line"></dd></div>
+      </dl>
+      <div class="origin" id="origin">
+        <p class="origin-stamp" id="origin-stamp"></p>
+        <p class="origin-odds" id="origin-odds"></p>
+      </div>
+      <p id="origin-line" class="origin-line"></p>
+      <p class="mrz" id="mrz" aria-hidden="true"></p>
+    </article>
     <div class="actions">
       <button id="start-btn" type="button">Open your eyes</button>
       <button id="again-btn" type="button" class="secondary">Be born somewhere else</button>
     </div>
   </main>
 
-  <main class="screen hidden" id="time">
-    <p class="label time-chapter" id="time-chapter"></p>
-    <h2 class="time-age"><span id="time-age"></span></h2>
-    <div class="road">
-      <div class="road-city" id="road-city"></div>
-      <div class="walker"></div>
+  <main class="screen hidden scene-screen" id="time">
+    <div class="hero time-hero">
+      <img class="hero-img" id="time-scene" alt="">
+      <div class="time-title">
+        <p class="label time-chapter" id="time-chapter"></p>
+        <h2 class="time-age"><span id="time-age"></span></h2>
+      </div>
     </div>
+    <div class="walker"></div>
     <p class="fact did-you-know" id="time-fact"></p>
     <div class="actions">
       <button id="time-btn" type="button">Go on</button>
     </div>
   </main>
 
-  <main class="screen hidden" id="event">
+  <main class="screen hidden scene-screen" id="event">
     <header class="life">
       <p class="label" id="event-count"></p>
       <div class="paws" id="paws"></div>
@@ -92,7 +103,7 @@
     <div class="gesture hidden" id="gesture"></div>
   </main>
 
-  <main class="screen hidden" id="result">
+  <main class="screen hidden scene-screen" id="result">
     <div class="cat-card" id="result-card"></div>
     <div class="factors" id="factors"></div>
     <p class="story" id="result-text"></p>
@@ -118,29 +129,32 @@
 
   <main class="screen hidden" id="ending">
     <article class="end-card" id="end-card">
-      <p class="rarity" id="rarity"></p>
-      <div class="scene small">
-        <div class="disc"></div>
-        <div class="cat-slot"></div>
+      <div class="hero end-hero">
+        <img class="hero-img" id="end-scene" alt="">
+        <p class="rarity" id="rarity"></p>
+        <div class="hero-cat cat-slot"></div>
       </div>
-      <p class="label" id="end-city"></p>
-      <h2 id="ending-title"></h2>
-      <p class="odds" id="odds"></p>
-      <p class="end-life" id="end-life"></p>
-      <p class="story" id="ending-text"></p>
-      <div class="journey after-text" id="journey">
-        <p class="stars" id="stars"></p>
-        <p class="journey-line" id="journey-line"></p>
-        <p class="score-line" id="score-line"></p>
-        <div class="awards" id="awards"></div>
+      <div class="end-body">
+        <p class="label" id="end-city"></p>
+        <h2 id="ending-title"></h2>
+        <p class="odds" id="odds"></p>
+        <p class="end-life" id="end-life"></p>
+        <p class="story" id="ending-text"></p>
+        <div class="journey after-text" id="journey">
+          <p class="stars" id="stars"></p>
+          <p class="journey-line" id="journey-line"></p>
+          <p class="score-line" id="score-line"></p>
+          <div class="awards" id="awards"></div>
+        </div>
+        <div class="status after-text" id="end-status"></div>
+        <p class="fact after-text" id="fact"></p>
       </div>
-      <div class="status after-text" id="end-status"></div>
-      <p class="fact after-text" id="fact"></p>
     </article>
     <p class="found after-text" id="found"></p>
-    <div class="actions after-text">
-      <button id="share-btn" type="button">Share my cat</button>
+    <!-- always at the bottom of the screen, even before scrolling -->
+    <div class="actions end-actions after-text">
       <p class="share-note" id="share-note" role="status"></p>
+      <button id="share-btn" type="button">Share my cat</button>
       <button id="restart-btn" type="button" class="secondary">Be born again</button>
     </div>
   </main>

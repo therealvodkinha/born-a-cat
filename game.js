@@ -79,25 +79,26 @@ function statePills() {
 }
 
 // ------------------------------------------------------------
-// The cat card: the cat, and its stats as little gauges.
+// The cat card: the place, big, with the cat standing in it, and under
+// it the cat's name and its stats as little gauges.
 // ------------------------------------------------------------
 const GAUGES = [
-  { key: "health", name: "Health" },
-  { key: "happy", name: "Happiness" },
-  { key: "strength", name: "Strength" },
+  { key: "health", name: "Health", icon: "❤️" },
+  { key: "happy", name: "Happiness", icon: "😺" },
+  { key: "strength", name: "Strength", icon: "💪" },
 ];
 
 function buildCard(card) {
   card.innerHTML =
-    `<div class="mini-cat cat-slot"><figure class="snapshot"><img alt=""><figcaption></figcaption></figure>` +
-    `${CAT_PICTURE}${CAT_SVG}<div class="hearts"></div></div>` +
-    `<div class="gauges"><p class="card-name"><span class="name"></span><span class="breed-tag"></span></p>` +
+    `<div class="hero"><img class="hero-img" alt=""><p class="place"></p>` +
+    `<div class="hero-cat mini-cat">${CAT_PICTURE}${CAT_SVG}<div class="hearts"></div></div></div>` +
+    `<div class="gauges"><p class="card-name"><span class="name"></span><span class="breed-tag"></span>` +
+    `<span class="g-body"><span class="kg"></span> · <span class="cm"></span><b class="g-delta kg-delta"></b></span></p>` +
     GAUGES.map(
       (g) =>
-        `<div class="gauge" data-k="${g.key}"><span class="g-name">${g.name}</span>` +
-        `<span class="g-bar"><i></i></span><b class="g-delta"></b></div>`
+        `<div class="gauge" data-k="${g.key}" title="${g.name}"><span class="g-icon" aria-hidden="true">${g.icon}</span>` +
+        `<span class="g-name">${g.name}</span><span class="g-bar"><i></i></span><b class="g-delta"></b></div>`
     ).join("") +
-    `<p class="g-body"><span class="kg"></span> · <span class="cm"></span><b class="g-delta kg-delta"></b></p>` +
     `</div>`;
 }
 
@@ -116,9 +117,9 @@ function updateCard(card, change) {
     card.querySelector(".kg").textContent = weightOf(life).toFixed(1) + " kg";
     card.querySelector(".cm").textContent = sizeOf(life) + " cm";
   };
-  for (const d of card.querySelectorAll(".g-delta")) {
-    d.textContent = "";
-    d.className = d.className.replace(/ (up|down)/g, "");
+  for (const d of card.querySelectorAll(".g-delta, .gauge")) {
+    if (d.matches(".g-delta")) d.textContent = "";
+    d.classList.remove("up", "down");
   }
   if (!change) return set();
 
@@ -139,6 +140,7 @@ function updateCard(card, change) {
       const d = card.querySelector(`[data-k="${g.key}"] .g-delta`);
       d.textContent = (n > 0 ? "+" : "−") + Math.abs(n);
       d.classList.add(n > 0 ? "up" : "down");
+      d.parentNode.classList.add(n > 0 ? "up" : "down"); // the bar lights up
     }
     if (change.kg) {
       const d = card.querySelector(".kg-delta");
@@ -244,8 +246,11 @@ function beBorn() {
   setLook("tone", null);
   showState();
   document.getElementById("horizon").innerHTML = SKYLINES[life.city] || "";
-  document.getElementById("scene-city").innerHTML = SKYLINES[life.city] || "";
-  document.getElementById("road-city").innerHTML = SKYLINES[life.city] || "";
+  // the place where the cat is born, behind it on its passport photo
+  place = STORIES[life.city].birthScenes[life.origin];
+  document.getElementById("birth-scene").src = sceneSrc(place);
+  paintBackdrop();
+  loadScenes();
   document.getElementById("confetti").replaceChildren();
 
   // the name of the city falls in letter by letter
@@ -263,16 +268,26 @@ function beBorn() {
   document.getElementById("origin-line").textContent = STORIES[life.city].origins[life.origin];
   // a cat with a breed gets its name in gold
   document.getElementById("breed-line").innerHTML =
-    life.breed === "mixed" ? "" : `<span class="breed-tag">${BREEDS[life.breed].label}</span>${BREEDS[life.breed].line}`;
-  document.getElementById("coat-line").textContent = COAT_LINES[coat.id] || "";
-  rollOrigin();
-  document.getElementById("trait-line").textContent = life.trait.line;
-  document.getElementById("name-line").innerHTML = `They call you <strong>${life.name}</strong>`;
+    life.breed === "mixed" ? "Mixed" : `<span class="breed-tag">${BREEDS[life.breed].label}</span>`;
+  document.getElementById("coat-line").textContent = coat.id;
+  document.getElementById("trait-line").textContent = TRAIT_NAMES[life.trait.id];
+  document.getElementById("name-line").textContent = life.name;
   document.getElementById("name-meaning").textContent = life.nameMeaning;
+  document.getElementById("mrz").textContent = passportLines(life, coat).join("\n");
+  rollOrigin();
   show("birth");
   SOUND.music(life.city);
   SOUND.mood("day");
   SOUND.play("meow", 0.6);
+}
+
+// The two lines of letters at the bottom of a passport, for fun.
+function passportLines(life, coat) {
+  const clean = (text) =>
+    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "<");
+  const line = (text) => clean(text).padEnd(30, "<").slice(0, 30);
+  const number = String(Math.floor(Math.random() * 1e9)).padStart(9, "0");
+  return [line(`P<${life.city.slice(0, 3)}<${life.name}<<${coat.id}`), line(`${number}<CAT<${TRAIT_NAMES[life.trait.id]}`)];
 }
 
 // Where the cat is born is drawn like a lottery: the stamps flicker, then
@@ -292,12 +307,14 @@ function rollOrigin() {
     const chance = ORIGINS[life.origin].chance;
     odds.textContent = chance >= 0.5 ? `Like ${Math.round(chance * 100)}% of cats` : `Only ${Math.round(chance * 100)}% of cats start like this`;
     box.classList.remove("rolling");
+    screens.birth.classList.remove("rolling");
     box.classList.add("landed");
     SOUND.play(life.origin === "home" ? "perfect" : "pop");
   };
   rollOrigin.land = land;
   box.classList.remove("landed");
   box.classList.add("rolling");
+  screens.birth.classList.add("rolling");
   odds.textContent = "";
   let n = 0;
   stamp.textContent = ORIGINS[ids[0]].label;
@@ -308,35 +325,38 @@ screens.birth.addEventListener("click", (e) => {
   if (!e.target.closest("button") && rollOrigin.land) rollOrigin.land();
 });
 
-// A new step: the cat grows, and walks across the screen while its age
-// changes. At the start of a new chapter of life, the walk is followed by a
-// true fact, and the player goes on when ready. Otherwise it goes on alone.
+// A new step: the cat grows. Within a chapter of life, the next event comes
+// at once. A new chapter gets its own screen: the cat walks across the place
+// of what comes next while its age changes, then a true fact, and the
+// player goes on when ready.
 function startStep() {
   const step = stepOf(life);
   const prev = life.step === 0 ? null : STEPS[life.step - 1];
   const newChapter = !prev || prev.chapter !== step.chapter;
-  if (!prev) loadScenes();
   beginStep(life);
   showState();
   setLook("mood", "awake");
   setLook("tone", null);
+  if (!newChapter) return showEvent();
 
+  showEvent.next = drawEvent(life);
   const screen = screens.time;
   const age = document.getElementById("time-age");
-  document.getElementById("time-chapter").textContent = newChapter ? step.chapter.name : "";
+  document.getElementById("time-chapter").textContent = step.chapter.name;
   age.textContent = prev ? prev.age : "Born";
   age.className = "";
-  const fact = newChapter ? freshFact([], CITY_FACTS[life.city]) : null;
+  const fact = freshFact([], CITY_FACTS[life.city]);
   document.getElementById("time-fact").innerHTML = fact
     ? `<b>Did you know?</b><br>${fact.text}<br><a href="${fact.url}" target="_blank" rel="noopener">${fact.source}</a>`
     : "";
   document.querySelector("#time .walker").innerHTML = walkingCat(); // restarts the walk
   screen.classList.add("waiting");
   show("time");
+  showPlace(screen.querySelector(".hero"), placeOf(showEvent.next));
   SOUND.mood("day");
   SOUND.play("steps", 0.1);
   if (Math.random() < 0.5) SOUND.play("city-" + life.city, 0.3);
-  if (newChapter) SOUND.play("chapter", calm ? 0.6 : 2.6);
+  SOUND.play("chapter", calm ? 0.6 : 2.6);
 
   const walk = calm ? 600 : 2600;
   clearTimeout(startStep.timer);
@@ -354,40 +374,53 @@ function startStep() {
     if (!age.className) age.className = "new-age";
     screen.classList.remove("waiting");
     screen.classList.add("skipped");
-    if (!newChapter) showEvent();
   };
   screen.classList.remove("skipped");
   startStep.timer = setTimeout(() => {
     screen.classList.remove("waiting");
-    if (startStep.skip) {
-      startStep.skip = null;
-      if (!newChapter) showEvent();
-    }
+    startStep.skip = null;
   }, walk);
 }
 
-// A tap during the walk skips it. A tap on a chapter card goes on.
+// A tap during the walk skips it. A tap after it goes on.
 screens.time.addEventListener("click", (e) => {
   if (e.target.closest("a, button")) return;
   if (startStep.skip) startStep.skip();
   else showEvent();
 });
 
-// Where an event happens (its "scene" in stories.js), like a photo behind
-// the cat, while the player chooses. Without one, the card shows the cat
-// alone, as on the outcome, which has enough to show already.
-function showScene(card, event) {
-  card.classList.toggle("has-scene", !!event.scene);
-  if (!event.scene) return;
-  const img = card.querySelector(".snapshot img");
-  const src = sceneSrc(event.scene);
-  if (img.getAttribute("src") !== src) img.setAttribute("src", src);
-  card.querySelector(".snapshot figcaption").textContent = `${STORIES[life.city].scenes[event.scene]}, ${life.city}`;
-}
+// Where the cat is: one of the city's painted places (its "scenes" in
+// stories.js). An event without a place of its own happens where the
+// cat already is.
+let place = null;
 const sceneSrc = (id) => `img/scenes/${life.city.toLowerCase()}-${id}.webp`;
+const placeOf = (event) => event.scene || place;
 
-// The city's scenes are loaded while the cat grows up, so that each photo
-// is there at once when its event comes.
+// The page behind everything: the painting of where the cat is, blurred.
+function paintBackdrop() {
+  document.getElementById("backdrop").style.backgroundImage = `url(${sceneSrc(place)})`;
+}
+
+// Paints a place, big, behind the cat. When the cat has moved somewhere
+// new, the painting fades in with a slow zoom.
+function showPlace(hero, id) {
+  const moved = id !== place;
+  place = id;
+  if (moved) paintBackdrop();
+  const img = hero.querySelector(".hero-img");
+  const src = sceneSrc(id);
+  if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+  const caption = hero.querySelector(".place");
+  if (caption) caption.textContent = `${STORIES[life.city].scenes[id]}, ${life.city}`;
+  hero.classList.remove("arrive");
+  if (moved && !calm) {
+    hero.offsetWidth; // restarts the fade
+    hero.classList.add("arrive");
+  }
+}
+
+// The city's places are loaded while the cat is born, so that each
+// painting is there at once when it is needed.
 function loadScenes() {
   for (const id in STORIES[life.city].scenes) new Image().src = sceneSrc(id);
 }
@@ -396,7 +429,8 @@ function showEvent() {
   clearTimeout(startStep.timer);
   clearTimeout(startStep.swap);
   const step = stepOf(life);
-  const event = drawEvent(life);
+  const event = showEvent.next || drawEvent(life); // drawn already, at a new chapter
+  showEvent.next = null;
 
   setLook("mood", "awake");
   setLook("tone", null);
@@ -406,7 +440,7 @@ function showEvent() {
     .map((s, n) => PAW_SVG.replace("<svg", `<svg class="${n < life.step ? "done" : "now"}"`))
     .join("");
   updateCard(document.getElementById("event-card"));
-  showScene(document.getElementById("event-card"), event);
+  showPlace(document.querySelector("#event-card .hero"), placeOf(event));
   document.getElementById("status").innerHTML = statePills();
 
   const box = document.getElementById("choices");
@@ -617,6 +651,7 @@ function choose(choice, skill) {
   showState();
   const card = document.getElementById("result-card");
   updateCard(card, change);
+  showPlace(card.querySelector(".hero"), place);
   if (change.happy >= 10) hearts(card, Math.min(6, Math.round(change.happy / 3)));
   else card.querySelector(".hearts").replaceChildren();
   if (change.health <= -20) hit();
@@ -792,6 +827,7 @@ function showEnding() {
   document.getElementById("share-note").textContent = "";
 
   show("ending");
+  showPlace(card.querySelector(".hero"), place);
   if (rarity === "rare" || rarity === "legendary" || reward.newAwards.length) SOUND.play("rare", 0.3);
   if (rarity === "rare") throwConfetti(40);
   if (rarity === "legendary") throwConfetti(90);
