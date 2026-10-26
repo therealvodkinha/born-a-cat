@@ -249,6 +249,7 @@ function beBorn() {
   // the place where the cat is born, behind it on its passport photo
   place = STORIES[life.city].birthScenes[life.origin];
   document.getElementById("birth-scene").src = sceneSrc(place);
+  paintBackdrop();
   loadScenes();
   document.getElementById("confetti").replaceChildren();
 
@@ -395,11 +396,17 @@ let place = null;
 const sceneSrc = (id) => `img/scenes/${life.city.toLowerCase()}-${id}.webp`;
 const placeOf = (event) => event.scene || place;
 
+// The page behind everything: the painting of where the cat is, blurred.
+function paintBackdrop() {
+  document.getElementById("backdrop").style.backgroundImage = `url(${sceneSrc(place)})`;
+}
+
 // Paints a place, big, behind the cat. When the cat has moved somewhere
 // new, the painting fades in with a slow zoom.
 function showPlace(hero, id) {
   const moved = id !== place;
   place = id;
+  if (moved) paintBackdrop();
   const img = hero.querySelector(".hero-img");
   const src = sceneSrc(id);
   if (img.getAttribute("src") !== src) img.setAttribute("src", src);

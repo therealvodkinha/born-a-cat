@@ -115,6 +115,24 @@ body::before {
   to { opacity: 1; transform: none; }
 }
 
+/* Behind everything: the painting of where the cat is, blurred, under a
+   veil of the city's colour, so the cards and buttons stand out. */
+.backdrop {
+  position: fixed;
+  inset: -60px;
+  z-index: 0;
+  pointer-events: none;
+  background: center / cover no-repeat;
+  filter: blur(26px) saturate(1.35);
+  opacity: 0;
+  transition: opacity 1s ease, background-image 0.8s ease;
+}
+.backdrop::after { content: ""; position: absolute; inset: 0; background: var(--veil); transition: background-color 0.8s ease; }
+body[data-city] .backdrop { opacity: 1; }
+body[data-city="Rabat"] { --veil: rgba(243, 234, 217, 0.5); }
+body[data-city="Tokyo"] { --veil: rgba(27, 31, 58, 0.55); }
+body[data-tone="night"] { --veil: rgba(21, 20, 31, 0.85); }
+
 /* The city along the bottom of the screen. */
 .horizon {
   position: fixed;
@@ -787,18 +805,19 @@ body[data-tone="good"] .mini-cat::before { animation: flare 0.9s ease-out; }
    while its age changes, written big on the painting. */
 #time { animation: enter 0.5s both; }
 #time .hero { height: clamp(300px, 60dvh, 560px); }
-#time .hero::after { background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 45%, transparent 80%, var(--bg)); }
+#time .hero::after { background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 45%); }
 .time-title { position: absolute; z-index: 3; top: calc(var(--pad-top) + 36px); left: 0; right: 0; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
 #time .time-chapter { color: #fff; }
 #time .time-age { color: #fff; }
 .time-chapter { font-size: 1rem; min-height: 1.3em; animation: enter 0.5s both; }
 .time-age { margin: 0.1em 0 0.2em; min-height: 1em; }
 .time-age .new-age { display: inline-block; animation: drop 0.6s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+/* the cat walks along the bottom of the screen, on top of its city */
 .walker {
   position: absolute;
   z-index: 2;
-  bottom: 30px;
-  left: 0;
+  bottom: calc(40px - var(--pad-bottom));
+  left: -18px;
   width: calc(150px * var(--size, 1));
   animation: cross 2.6s linear both;
 }
@@ -813,7 +832,7 @@ body[data-age="kitten"] .walk-head { transform-box: fill-box; transform-origin: 
 body[data-cond="weak"] .walk-cat { filter: saturate(0.35); }
 /* Walking, in pictures: they are taller than the drawing, so a bit narrower.
    With two pictures, the second one shows every other step. */
-body[data-pictures] .walker { width: calc(128px * var(--grown)); }
+body[data-pictures] .walker { width: calc(170px * var(--grown)); }
 .walk-pictures { position: relative; animation: gait 0.35s ease-in-out infinite alternate; }
 .walk-picture { display: block; width: 100%; height: auto; }
 .walk-picture + .walk-picture { position: absolute; inset: 0; animation: frame 0.7s steps(1) infinite; }
@@ -866,17 +885,21 @@ body[data-tone="night"] .horizon { opacity: 0.25; }
   margin: calc(-1 * var(--pad-top)) -18px 0;
   height: clamp(240px, 50dvh, 470px);
   overflow: hidden;
-  background: var(--card);
 }
 .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 70%; transition: filter 0.8s ease; }
-/* dark at the top for the words written there, and melting into the page at the bottom */
+/* dark at the top for the words written there */
 .hero::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 26%, transparent 80%, var(--bg));
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), transparent 26%);
+}
+/* and melting into the page at the bottom */
+.scene-screen .hero-img {
+  -webkit-mask-image: linear-gradient(#000 76%, transparent);
+  mask-image: linear-gradient(#000 76%, transparent);
 }
 /* a new place fades in with a slow zoom */
 .hero.arrive .hero-img { animation: arrive 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }

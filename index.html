@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body data-mood="asleep">
+  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
   <div class="horizon" id="horizon" aria-hidden="true"></div>
   <button id="mute-btn" class="mute" type="button" aria-label="Turn sound off">
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -82,8 +83,8 @@
         <p class="label time-chapter" id="time-chapter"></p>
         <h2 class="time-age"><span id="time-age"></span></h2>
       </div>
-      <div class="walker"></div>
     </div>
+    <div class="walker"></div>
     <p class="fact did-you-know" id="time-fact"></p>
     <div class="actions">
       <button id="time-btn" type="button">Go on</button>
