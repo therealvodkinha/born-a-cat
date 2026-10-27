@@ -688,6 +688,7 @@ const FAREWELLS = {
   attack: ["You were braver than you were big.", "It’s quiet now. Somewhere, your mother is calling, and calling."],
   fall: ["For one second, you flew.", "The ground was closer than it looked. It always is."],
   cold: ["You are so cold that it stops hurting.", "You curl up as small as you can. You purr a little, to keep yourself company."],
+  water: ["The water is cold, and it keeps coming.", "You hold on to the cardboard as long as you can. Somewhere above, your mother is calling."],
   trash: ["The box moves. Then it goes dark, and very loud.", "You curl up against your brothers and sisters. At least it’s warm in here."],
   sick: ["You have been tired for a long time now.", "You find a quiet spot, out of the wind. You don’t know what is wrong. Nobody does."],
   poison: ["Something you ate is burning, slowly, from the inside.", "You hide under a car, where nobody can see you. Cats do that. It doesn’t help."],
@@ -767,8 +768,9 @@ function causeHtml() {
 
 function oddsLine(odds) {
   if (!odds) return "";
-  if (odds >= 0.2) return `<strong>${Math.round(odds * 100)}%</strong> of lives in ${life.city} end like this`;
-  return `Only <strong>1 life in ${Math.round(1 / odds)}</strong> in ${life.city} ends like this`;
+  // under 1%, one decimal (0.4%), so a rare ending never reads "0%"
+  const pct = odds < 0.01 ? Math.max(0.1, odds * 100).toFixed(1) : Math.round(odds * 100);
+  return `${odds >= 0.2 ? "" : "Only "}<strong>${pct}%</strong> of lives in ${life.city} end like this`;
 }
 
 function throwConfetti(count) {

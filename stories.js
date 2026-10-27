@@ -290,8 +290,8 @@ const CONDITIONS = {
 
 // How a cat can die. Shown on the ending card, with the age.
 //   kind : the family of the cause; an ending with "cause" (see ENDING)
-//          is only told for a death of that kind. "worn" has none: those
-//          cats get the city's plain endings.
+//          is only told for a death of that kind. A kind with no such ending
+//          ("worn", "water") gets the city's plain endings.
 //   line : what killed the cat. {caught} = the age it caught an illness
 const CAUSES = {
   car: { kind: "road", line: "Hit by a car" },
@@ -301,8 +301,10 @@ const CAUSES = {
   seagull: { kind: "attack", line: "Taken by a seagull" },
   crow: { kind: "attack", line: "Taken by a crow" },
   dogs: { kind: "attack", line: "Killed by stray dogs" },
+  stick: { kind: "attack", line: "Beaten by boys with a stick" },
   fall: { kind: "fall", line: "Fell from a roof" },
   cold: { kind: "cold", line: "Cold and hunger, alone" },
+  flood: { kind: "water", line: "Drowned in the rainy season" },
   hunger: { kind: "worn", line: "Starved" },
   worn: { kind: "worn", line: "Worn out by too many bad days" },
   fiv: { kind: "sick", line: "FIV, from a bite in a fight at {caught}" },
@@ -459,10 +461,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "bakery",
-          text: "You are the size of a msemen. Your mother left “for five minutes”. That was yesterday morning. Above you, the baker pulls down his shutter. It sounds like the end of the world.",
+          text: "You are the size of a msemen. Your mother left “for five minutes”. That was yesterday morning. Above you, the baker pulls down his shutter. It sounds like the end of the world. Tomorrow is Friday. He doesn’t open on Fridays.",
           choices: [
             {
               label: "Scream until he looks down",
+              deadly: { chance: 0.25, cause: "cold", text: "You scream until your voice is gone. He doesn’t hear you over the shutter. It stays down all Friday. On Saturday, there is no more screaming." },
               chance: 0.6,
               bonus: { brave: 0.1, shy: -0.2 },
               good: "He sighs like a man who already feeds four cats. Bread in milk. A cardboard box. He belongs to you now.",
@@ -489,7 +492,7 @@ const STORIES = {
           choices: [
             {
               label: "Puff up and hiss",
-              deadly: { chance: 0.6, cause: "seagull", text: "It doesn’t care how big you look. A shadow, a wing, and then the sky, very close. Your sisters stay in the crack until dark, and nobody makes a sound." },
+              deadly: { chance: 0.5, cause: "seagull", text: "It doesn’t care how big you look. A shadow, a wing, and then the sky, very close. Your sisters stay in the crack until dark, and nobody makes a sound." },
               gesture: "hold",
               chance: 0.4,
               bonus: { brave: 0.3, shy: -0.2 },
@@ -501,6 +504,7 @@ const STORIES = {
             },
             {
               label: "Squeeze into the crack in the wall",
+              deadly: { chance: 0.25, cause: "seagull", text: "The crack is deep enough for your sisters. For you, almost. A beak can reach a long way into a wall, it turns out." },
               gesture: "hold",
               chance: 0.7,
               bonus: { shy: 0.2 },
@@ -644,7 +648,7 @@ const STORIES = {
           choices: [
             {
               label: "Pounce",
-              deadly: { chance: 0.45, cause: "fall", text: "You miss the pigeon. Cats turn in the air and land on their feet. You do turn. The street of stones comes before your feet do. The pigeon stays on the edge, looking down." },
+              deadly: { chance: 0.4, cause: "fall", text: "You miss the pigeon. Cats turn in the air and land on their feet. You do turn. The street of stones comes before your feet do. The pigeon stays on the edge, looking down." },
               gesture: "pounce",
               chance: 0.35,
               bonus: { brave: 0.1, clever: 0.1 },
@@ -657,6 +661,7 @@ const STORIES = {
             },
             {
               label: "Stalk it slowly",
+              deadly: { chance: 0.25, cause: "fall", text: "A woman comes up to hang her washing. She screams. You run, the wrong way, toward the edge. The pigeon flies off. You can’t." },
               gesture: "hold",
               chance: 0.6,
               bonus: { clever: 0.2, shy: 0.1 },
@@ -721,7 +726,7 @@ const STORIES = {
         },
         {
           scene: "walls",
-          text: "A little girl crouches near the Oudayas. She holds out her hand very slowly, like it’s a big responsibility. Her mother is calling her, louder each time.",
+          text: "A little girl crouches near the Oudayas. She holds out her hand very slowly, like it’s a big responsibility. Her mother is calling her, louder each time. Behind them, three boys with a stick are looking for something to do.",
           choices: [
             {
               label: "Let her pet you",
@@ -737,6 +742,7 @@ const STORIES = {
             },
             {
               label: "Run",
+              deadly: { chance: 0.3, cause: "stick", text: "You run straight into the three boys. They find something to do. The girl cries all the way home, and her mother doesn’t understand why." },
               chance: 0.8,
               good: "Nobody owns you. Nobody will ever disappoint you. It’s a good system, mostly.",
               bad: "You run straight into three boys with a stick. From now on, hands are guilty until proven innocent.",
@@ -772,7 +778,7 @@ const STORIES = {
         },
         {
           scene: "tram",
-          text: "The tram rings its bell. On the other side of the tracks, the fish guy is throwing out what he couldn’t sell. Five cats have seen it. The tram doesn’t stop for cats. It barely stops for people.",
+          text: "The tram rings its bell. On the other side of the tracks, the fish guy is throwing out what he couldn’t sell. Five cats have seen it. The tram doesn’t stop for cats. It barely stops for people. And here, it runs both ways.",
           choices: [
             {
               // Traffic is what kills most young street cats (median age 2.7 years
@@ -793,6 +799,7 @@ const STORIES = {
             },
             {
               label: "Wait for the tram to pass",
+              deadly: { chance: 0.25, cause: "tram", text: "You wait. The tram passes. You cross, very proud of your patience. The one coming the other way doesn’t ring its bell." },
               chance: 0.7,
               bonus: { clever: 0.2 },
               good: "While the others fight over the first fish, you find the one under the stall. Nobody saw. You tell nobody.",
@@ -1542,10 +1549,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "konbini",
-          text: "You are born in a box behind a convenience store. It’s 2 a.m. The night worker is on his break, eating a rice ball, looking at nothing. On the box, in black marker: “BURNABLE — TUESDAY”. Tomorrow is Tuesday.",
+          text: "You are born in a box behind a convenience store. It’s 2 a.m. The night worker is on his break, eating a rice ball, looking at nothing. All night, delivery trucks back into the alley without looking. On the box, in black marker: “BURNABLE — TUESDAY”. Tomorrow is Tuesday.",
           choices: [
             {
               label: "Crawl toward the light",
+              deadly: { chance: 0.4, cause: "car", text: "You crawl toward the light. The light is a truck, backing into the alley, beeping politely. The night worker finishes his rice ball and never knows." },
               chance: 0.6,
               bonus: { curious: 0.2, shy: -0.2 },
               good: "He sees you. He says nothing. He is very tired. The next night, there’s a saucer of water and a folded towel in the box.",
@@ -1568,7 +1576,7 @@ const STORIES = {
         {
           origin: "street",
           scene: "park",
-          text: "Dawn in the park. The crows wake up first. One lands very close, tilts its head, and looks at you like a snack with legs.",
+          text: "Dawn in the park. The crows wake up first. One lands very close, tilts its head, and looks at you like a snack with legs. Tokyo crows hunt in pairs.",
           choices: [
             {
               label: "Hiss as loud as you can",
@@ -1584,6 +1592,7 @@ const STORIES = {
             },
             {
               label: "Crawl under the azaleas",
+              deadly: { chance: 0.35, cause: "crow", text: "The first crow waits in front of the azaleas. The second one walks in from the back. Your mother comes looking, and finds the bush empty." },
               gesture: "hold",
               chance: 0.7,
               bonus: { shy: 0.2, clever: 0.1 },
@@ -1595,10 +1604,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "street",
-          text: "Rainy season. Your box is turning into soup. A vending machine hums nearby, warm and bright, selling hot coffee to nobody. The shrine is on the other side of the road, behind the headlights.",
+          text: "Rainy season. Your box is turning into soup, and the gutter beside it is rising. A vending machine hums nearby, warm and bright, selling hot coffee to nobody. The shrine is on the other side of the road, behind the headlights.",
           choices: [
             {
               label: "Sleep behind the vending machine",
+              deadly: { chance: 0.3, cause: "flood", text: "Warm, dry, perfect. Then the gutter overflows in the night, and the water comes in behind the machine, where you are too small to climb out." },
               chance: 0.7,
               bonus: { clever: 0.1 },
               good: "Warm all night. The light keeps the rats away. You will love vending machines for the rest of your life.",
@@ -1835,10 +1845,11 @@ const STORIES = {
             },
             {
               label: "Wait outside until it’s quiet",
+              catches: { ill: "fiv", chance: 0.4, on: "bad" },
               chance: 0.7,
               bonus: { clever: 0.2 },
               good: "At midnight, the cook takes out the trash. He leaves the lid open. Just enough.",
-              bad: "Another cat had the same idea. It is bigger, and it was there first.",
+              bad: "Another cat had the same idea. It is bigger, it was there first, and it bites. You leave with a hole in your shoulder.",
               goodFx: { food: 2 },
               badFx: { food: -1 },
             },
