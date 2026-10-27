@@ -49,7 +49,9 @@ function newLife(city, rng = Math.random) {
     seen: new Set(), // events already lived
     good: 0,
     bad: 0,
-    death: null,     // null, "hurt" (health reached 0) or "age"
+    death: null,     // null, "hurt" (health reached 0), "ill" or "age"
+    cause: null,     // what killed it: { id (from CAUSES), age, caught }
+    ills: {},        // hidden illnesses: { id: age when caught, step }
     lowest: 100,     // the worst health it lived through
     happySum: 0,     // happiness after each step, added up (for the average)
   };
@@ -75,6 +77,8 @@ function stepOf(life) {
 function beginStep(life) {
   const step = stepOf(life);
   const fx = { ...(step.chapter.each || {}) };
+  const hunger = ORIGINS[life.origin].hunger;
+  if (hunger && step.chapterIndex <= 2) life.fed = clamp(life.fed - hunger, -4, 4);
   if (life.fed <= -3) fx.health = (fx.health || 0) - 8;
   addStats(life, fx);
   life.fed -= Math.sign(life.fed);
@@ -143,14 +147,24 @@ function chanceOf(choice, life, skill = 0) {
   return { chance: clamp(total, 0.05, 0.95), factors, mods };
 }
 
-// Rolls the dice. Returns { wentWell, factors, text }: the text can change
+// How likely a bad outcome of this choice is to kill this cat (see "deadly").
+// A cat born in a home is safer; a healthy cat survives more often.
+function deathChance(choice, life) {
+  if (!choice.deadly) return 0;
+  const shape = 1.5 - life.stats.health / 100; // 1 at health 50
+  return clamp(choice.deadly.chance * ORIGINS[life.origin].danger * shape, 0, 0.95);
+}
+
+// Rolls the dice. Returns { wentWell, died, factors, text }: the text can change
 // with the cat's past, coat or condition (see "mods").
 function rollChoice(choice, life, skill = 0, rng = Math.random) {
   const { chance, factors, mods } = chanceOf(choice, life, skill);
   const wentWell = rng() < chance;
+  const died = !wentWell && rng() < deathChance(choice, life);
   const key = wentWell ? "good" : "bad";
   const special = mods.find((m) => m[key]);
-  return { wentWell, factors, text: special ? special[key] : choice[key] };
+  const text = died ? choice.deadly.text : special ? special[key] : choice[key];
+  return { wentWell, died, factors, text };
 }
 
 // The gestures some choices ask for, instead of a simple tap.
@@ -178,17 +192,24 @@ function addStats(life, fx) {
 }
 
 // Applies what happened. Returns what changed, to show it on screen.
-function applyOutcome(life, choice, wentWell) {
+function applyOutcome(life, choice, wentWell, died = false, rng = Math.random) {
   const before = { ...life.stats, kg: weightOf(life) };
   const fx = { ...DEFAULT_FX[wentWell ? "good" : "bad"], ...(wentWell ? choice.goodFx : choice.badFx) };
   addStats(life, fx);
   if (wentWell) life.good++;
   else life.bad++;
 
-  const mark = wentWell ? choice.goodMark : choice.badMark;
+  const mark = died ? null : wentWell ? choice.goodMark : choice.badMark;
   const isNew = !!mark && !life.marks.has(mark);
   if (mark) life.marks.add(mark);
-  if (life.stats.health <= 0) life.death = "hurt";
+  const age = stepOf(life).age;
+  if (died) life.stats.health = 0;
+  if (life.stats.health <= 0) {
+    life.death = "hurt";
+    const id = died ? choice.deadly.cause : choice.cause || (life.fed <= -2 ? "hunger" : "worn");
+    life.cause = { id, age };
+  }
+  catchIllness(life, choice.catches, wentWell, rng);
   life.lowest = Math.min(life.lowest, life.stats.health);
   life.happySum += life.stats.happy;
 
@@ -198,15 +219,43 @@ function applyOutcome(life, choice, wentWell) {
   return { change, mark: isNew ? mark : null };
 }
 
-// After each step: old cats may die in their sleep. Returns true if the life goes on.
+// A choice can pass on an illness, whatever the player sees (see "catches").
+function catchIllness(life, catches, wentWell, rng = Math.random) {
+  if (!catches || life.death || life.ills[catches.ill]) return;
+  if (catches.on && catches.on !== (wentWell ? "good" : "bad")) return;
+  if (ILLNESSES[catches.ill].vaccine && life.origin !== "street") return;
+  if (rng() < catches.chance) life.ills[catches.ill] = { age: stepOf(life).age, step: life.step };
+}
+
+// Hidden illnesses do their work between steps. Returns true if one kills.
+function sufferIllnesses(life, rng = Math.random) {
+  const step = stepOf(life);
+  for (const [id, caught] of Object.entries(life.ills)) {
+    const ill = ILLNESSES[id];
+    if (life.step <= caught.step || step.chapterIndex < ill.from) continue;
+    if (ill.drain) addStats(life, { health: ill.drain });
+    if (rng() < ill.risk || life.stats.health <= 0) {
+      life.death = "ill";
+      life.stats.health = 0;
+      life.cause = { id, age: step.age, caught: caught.age };
+      return true;
+    }
+  }
+  return false;
+}
+
+// After each step: illnesses may kill, and old cats may die in their sleep.
+// Returns true if the life goes on.
 function endStep(life, rng = Math.random) {
   if (life.death) return false;
+  if (sufferIllnesses(life, rng)) return false;
   const step = stepOf(life);
   if (step.risk) {
     let risk = step.risk * (1.6 - life.stats.health / 100);
     if (life.marks.has("home")) risk *= 0.8;
     if (step.risk >= 1 || rng() < risk) {
       life.death = "age";
+      life.cause = { id: "age", age: step.age };
       return false;
     }
   }
@@ -222,12 +271,20 @@ function endStep(life, rng = Math.random) {
 function drawEnding(life, rng = Math.random) {
   const step = stepOf(life);
   let when = null;
-  // Health running out in old age is just old age.
-  if (life.death === "hurt" && step.chapterIndex === LIFE.length - 1) life.death = "age";
-  if (life.death === "hurt") when = step.chapterIndex <= 1 ? "early" : "cut";
+  // Health running out in old age is just old age (but a car is still a car).
+  if (life.death === "hurt" && step.chapterIndex === LIFE.length - 1 && CAUSES[life.cause.id].kind === "worn") {
+    life.death = "age";
+    life.cause = { id: "age", age: step.age };
+  }
+  if (life.death === "hurt" || life.death === "ill") when = step.chapterIndex <= 1 ? "early" : "cut";
   else if (life.step === STEPS.length - 1) when = "ancient";
 
-  const endings = STORIES[life.city].endings.filter((e) => (e.when || null) === when && allowed(e, life.marks));
+  const kind = life.cause ? CAUSES[life.cause.id].kind : "age";
+  const all = STORIES[life.city].endings.filter((e) => allowed(e, life.marks));
+  // A life cut short is told by the way it ended, when the city has an ending for it.
+  const told = all.filter((e) => e.cause === kind && (when === "early" || when === "cut"));
+  if (told.length) return { ending: pick(told, rng), luck: "unlucky" };
+  const endings = all.filter((e) => !e.cause && (e.when || null) === when);
   // Endings with conditions win over the plain ones.
   const special = endings.filter((e) => e.needs || e.mood);
   const moodOk = special.filter((e) => !e.mood || (e.mood === "sad") === (life.stats.happy < 35));
@@ -255,6 +312,12 @@ function sizeOf(life) {
 // How old the cat was when it died, in words.
 function ageAtDeath(life) {
   return stepOf(life).age;
+}
+
+// What killed the cat: "Hit by the tram. Died at 1 year."
+function causeLine(life) {
+  const cause = life.cause || { id: "age", age: ageAtDeath(life) };
+  return `${CAUSES[cause.id].line.replace("{caught}", cause.caught || cause.age)}. Died at ${cause.age}.`;
 }
 
 // How rare an ending is, from its odds (0 to 1).

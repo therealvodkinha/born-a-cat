@@ -6,7 +6,8 @@
 // Where the cat ended up, in one word.
 function endStateOf(life, ending) {
   const marks = life.marks;
-  if (ending.when === "early") return "early";
+  // died before growing up (before Adult), whatever killed it
+  if (life.death !== "age" && stepOf(life).chapterIndex <= 2) return "early";
   if (marks.has("left") || marks.has("forgotten")) return "left";
   if (life.stats.happy < 35) return "alone";
   if (marks.has("home")) return "home";
@@ -49,7 +50,7 @@ const JOURNEYS = {
 
 // How much each end state is worth, and how hard each start is.
 const STATE_POINTS = { early: 0, left: -5, alone: -10, home: 12, respected: 10, loved: 7, free: 3 };
-const ORIGIN_HANDICAP = { street: 1.1, shelter: 1, home: 0.92 };
+const ORIGIN_HANDICAP = { street: 1.1, shelter: 1, home: 0.96 };
 
 // The score, out of 100. Living long, being happy, collecting good marks,
 // and ending well, counted against how hard the start was.
@@ -60,7 +61,7 @@ function lifeScore(life, ending) {
   const goodMarks = [...life.marks].filter((m) => MARKS[m] && MARKS[m].good).length;
   const raw = 40 * lived + 30 * happy + Math.min(20, 7 * goodMarks) + STATE_POINTS[state];
   const score = clamp(Math.round(raw * ORIGIN_HANDICAP[life.origin]), 0, 100);
-  const stars = score >= 85 ? 3 : score >= 65 ? 2 : 1;
+  const stars = score >= 89 ? 3 : score >= 65 ? 2 : 1;
   return { score, stars, state, line: JOURNEYS[life.origin][state] };
 }
 
@@ -74,12 +75,12 @@ const AWARDS = [
   { id: "second", title: "Second chance", text: "Born in a shelter, adopted.", test: (l) => l.origin === "shelter" && l.marks.has("home") },
   { id: "spoiled", title: "Spoiled for life", text: "Born in a home, kept it, and stayed happy.", test: (l, e, r) => l.origin === "home" && r.state === "home" && r.stars === 3 },
   { id: "fall", title: "Fall from grace", text: "Born in a home, ended with nothing.", test: (l, e, r) => l.origin === "home" && (r.state === "left" || r.state === "alone") },
-  { id: "nine", title: "Nine lives", text: "Almost died, then lived to be old.", test: (l, e) => l.lowest <= 10 && !e.when },
+  { id: "nine", title: "Nine lives", text: "Almost died, then lived to be old.", test: (l) => l.lowest <= 10 && l.death === "age" },
   { id: "ancient", title: "Older than everyone", text: "Lived through the very last step.", test: (l, e) => e.when === "ancient" },
   { id: "boss", title: "The boss", text: "Became king of the market.", test: (l) => l.marks.has("boss") },
   { id: "parent", title: "Family", text: "Had kittens.", test: (l) => l.marks.has("kittens") },
   { id: "big", title: "Big cat", text: "Weighed 6.5 kg or more.", test: (l) => weightOf(l) >= 6.5 },
-  { id: "tough", title: "Tough as old boots", text: "Five bad days or more, and still died of old age.", test: (l, e) => l.bad >= 5 && !e.when },
+  { id: "tough", title: "Tough as old boots", text: "Five bad days or more, and still died of old age.", test: (l) => l.bad >= 5 && l.death === "age" },
   { id: "stars", title: "A life well lived", text: "Three stars.", test: (l, e, r) => r.stars === 3 },
   { id: "purebred", title: "Fancy", text: "Born with a breed.", test: (l) => l.breed !== "mixed" },
   { id: "cities", title: "Two cities", text: "Lived a life in Rabat and one in Tokyo.", test: (l, e, r, seen) => ["Rabat", "Tokyo"].every((c) => c === l.city || seen.cities.includes(c)) },

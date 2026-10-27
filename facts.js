@@ -2,8 +2,9 @@
 // Shown:
 //  - under an outcome, when its event has "fact" (stories.js)
 //  - on each chapter card ("Did you know?"), a fact the player hasn't seen yet
-//  - on the ending card: the ending's own fact ("fact" in the ending, or
-//    ENDING_FACTS by title) if not seen yet, otherwise a new one from the city
+//  - on the ending card: the fact about what killed the cat (CAUSE_FACTS),
+//    or the ending's own fact ("fact" in the ending, or ENDING_FACTS by
+//    title), if not seen yet, otherwise a new one from the city
 //    or from all facts.
 // The game remembers which facts the player has seen (in this browser), so
 // the same ones don't keep coming back. Add facts freely: more is better.
@@ -23,6 +24,16 @@ const FACTS = {
     text: "Cats killed on the road die at 2.7 years old on average. Cats who die of anything else: 14 years.",
     source: "McDonald et al., RVC, J Small Anim Pract 2017",
     url: "https://rvc.ac.uk/vetcompass/news/mortality-due-to-trauma-in-cats",
+  },
+  fiv: {
+    text: "FIV, the cat version of HIV, passes mostly through bites. Toms who go out and fight are the most at risk. A cat can carry it for years without showing anything.",
+    source: "Cornell Feline Health Center",
+    url: "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/feline-immunodeficiency-virus",
+  },
+  felv: {
+    text: "Feline leukaemia passes through saliva: shared bowls, grooming. 80 to 90% of infected cats die within 3 or 4 years. A vaccine protects against it.",
+    source: "VCA Animal Hospitals",
+    url: "https://vcahospitals.com/know-your-pet/feline-leukemia-virus-disease",
   },
   females: {
     text: "Female cats live about 16 months longer than males.",
@@ -255,6 +266,19 @@ const ENDING_FACTS = {
   "Older than the tram": "oldest",
   "A cat nobody kept": "streetLife",
   "Star of the alley": "japanShelters",
+};
+
+// The fact told first on the ending card, for some ways of dying (see CAUSES).
+const CAUSE_FACTS = {
+  car: "roads",
+  tram: "roads",
+  train: "roads",
+  fiv: "fiv",
+  felv: "felv",
+  cold: "streetKittens",
+  trash: "streetKittens",
+  seagull: "streetKittens",
+  crow: "streetKittens",
 };
 
 const CITY_FACTS = {
