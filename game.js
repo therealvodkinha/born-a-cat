@@ -618,8 +618,8 @@ function runGame(panel, choice, done) {
 // ------------------------------------------------------------
 function choose(choice, skill) {
   const condBefore = conditionOf(life);
-  const { wentWell, factors, text } = rollChoice(choice, life, skill);
-  const { change, mark } = applyOutcome(life, choice, wentWell);
+  const { wentWell, died, factors, text } = rollChoice(choice, life, skill);
+  const { change, mark } = applyOutcome(life, choice, wentWell, died);
   const cond = conditionOf(life);
 
   // why it went like that: the trait, the stats, the past, the gesture
@@ -634,7 +634,7 @@ function choose(choice, skill) {
     const info = MARKS[mark];
     gains.push(`<p class="gain ${info.good ? "good" : "bad"}">${info.good ? "+ " : ""}${info.label}</p>`);
   }
-  if (cond !== condBefore && CONDITIONS[cond].gained) {
+  if (cond !== condBefore && CONDITIONS[cond].gained && !life.death) {
     gains.push(`<p class="gain ${cond === "strong" ? "good" : "bad"}">${CONDITIONS[cond].label}</p>`);
     gains.push(`<p class="gain-line">${CONDITIONS[cond].gained}</p>`);
   }
@@ -683,6 +683,15 @@ const FAREWELLS = {
   cut: ["You are very tired.", "You find a quiet spot, out of the wind. You curl up. You purr a little, just for yourself."],
   age: ["You are old now, and the sun is warm.", "You curl up in your favourite spot. Your breathing slows down. You are not afraid."],
   ancient: ["You have seen everything a cat can see.", "You curl up one last time, slowly, as if you had all the time in the world. You do."],
+  // a life cut short, by the way it ended (see "kind" in CAUSES)
+  road: ["It was very fast. Faster than you.", "The noise of the street goes on, the same as before. Just without you in it."],
+  attack: ["You were braver than you were big.", "It’s quiet now. Somewhere, your mother is calling, and calling."],
+  fall: ["For one second, you flew.", "The ground was closer than it looked. It always is."],
+  cold: ["You are so cold that it stops hurting.", "You curl up as small as you can. You purr a little, to keep yourself company."],
+  water: ["The water is cold, and it keeps coming.", "You hold on to the cardboard as long as you can. Somewhere above, your mother is calling."],
+  trash: ["The box moves. Then it goes dark, and very loud.", "You curl up against your brothers and sisters. At least it’s warm in here."],
+  sick: ["You have been tired for a long time now.", "You find a quiet spot, out of the wind. You don’t know what is wrong. Nobody does."],
+  poison: ["Something you ate is burning, slowly, from the inside.", "You hide under a car, where nobody can see you. Cats do that. It doesn’t help."],
 };
 
 function showFarewell() {
@@ -690,8 +699,11 @@ function showFarewell() {
   showFarewell.result = result;
   const step = stepOf(life);
   const kind =
-    life.death === "hurt" ? (step.chapterIndex <= 1 ? "early" : "cut") : life.step === STEPS.length - 1 ? "ancient" : "age";
-  const [one, two] = FAREWELLS[kind];
+    life.death === "hurt" || life.death === "ill"
+      ? step.chapterIndex <= 1 ? "early" : "cut"
+      : life.step === STEPS.length - 1 ? "ancient" : "age";
+  const how = life.cause && CAUSES[life.cause.id].kind;
+  const [one, two] = FAREWELLS[(kind === "early" || kind === "cut") && FAREWELLS[how] ? how : kind];
   document.getElementById("farewell-1").textContent = one;
   document.getElementById("farewell-2").textContent = two;
   document.getElementById("farewell-3").textContent = `${life.name} · ${ageAtDeath(life)}`;
@@ -738,13 +750,27 @@ function rememberEnding(title) {
 }
 
 function factFor(ending) {
-  return freshFact([ending.fact || ENDING_FACTS[ending.title]], CITY_FACTS[life.city]);
+  const cause = life.cause && CAUSE_FACTS[life.cause.id];
+  return freshFact([cause, ending.fact || ENDING_FACTS[ending.title]], CITY_FACTS[life.city]);
+}
+
+// What killed the cat, and how short that is, for a cat.
+// Pet cats live 11.7 years on average (Teng et al., RVC 2024, see "streetLife" in facts.js).
+function causeHtml() {
+  const old = stepOf(life).chapterIndex === LIFE.length - 1;
+  const compare = !old
+    ? "A pet cat lives 11.7 years on average."
+    : life.origin === "street"
+      ? "Many street cats never reach 5."
+      : "";
+  return `<strong>${causeLine(life)}</strong>${compare ? ` <span>${compare}</span>` : ""}`;
 }
 
 function oddsLine(odds) {
   if (!odds) return "";
-  if (odds >= 0.2) return `<strong>${Math.round(odds * 100)}%</strong> of lives in ${life.city} end like this`;
-  return `Only <strong>1 life in ${Math.round(1 / odds)}</strong> in ${life.city} ends like this`;
+  // under 1%, one decimal (0.4%), so a rare ending never reads "0%"
+  const pct = odds < 0.01 ? Math.max(0.1, odds * 100).toFixed(1) : Math.round(odds * 100);
+  return `${odds >= 0.2 ? "" : "Only "}<strong>${pct}%</strong> of lives in ${life.city} end like this`;
 }
 
 function throwConfetti(count) {
@@ -789,6 +815,7 @@ function showEnding() {
   document.getElementById("end-life").innerHTML =
     `Lived <strong>${ageAtDeath(life)}</strong> · ${weightOf(life).toFixed(1)} kg · ` +
     `${life.good} good ${life.good === 1 ? "day" : "days"}, ${life.bad} bad ${life.bad === 1 ? "day" : "days"}`;
+  document.getElementById("end-cause").innerHTML = causeHtml();
   document.getElementById("end-status").innerHTML = statePills();
   document.getElementById("stars").innerHTML = [1, 2, 3]
     .map((n) => `<span class="${n <= reward.stars ? "on" : ""}">★</span>`)
@@ -829,8 +856,9 @@ function showEnding() {
   show("ending");
   showPlace(card.querySelector(".hero"), place);
   if (rarity === "rare" || rarity === "legendary" || reward.newAwards.length) SOUND.play("rare", 0.3);
-  if (rarity === "rare") throwConfetti(40);
-  if (rarity === "legendary") throwConfetti(90);
+  // no party for a life cut short, however rare
+  if (rarity === "rare" && !ending.cause) throwConfetti(40);
+  if (rarity === "legendary" && !ending.cause) throwConfetti(90);
   typeText(document.getElementById("ending-text"), ending.text);
 }
 

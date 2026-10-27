@@ -54,6 +54,18 @@
 //              health -40 or more can kill a young cat. Use it for real danger only.
 //   goodMark : (optional) mark left if it goes well
 //   badMark  : (optional) mark left if it goes badly
+//   deadly   : (optional) if it goes badly, it can kill: { chance, cause, text }
+//                chance : how likely a bad outcome kills (times the origin's
+//                         "danger", and more for a sick cat)
+//                cause  : what killed it, one of CAUSES
+//                text   : what happens instead of "bad"
+//              The danger is never written on the button: the event's text
+//              must let a careful player feel it coming.
+//   catches  : (optional) an illness caught without knowing it: { ill, chance, on }
+//                ill    : one of ILLNESSES
+//                on     : (optional) "good" or "bad"; without it, either way
+//   cause    : (optional) what killed the cat if this outcome takes its
+//              health to 0 (one of CAUSES). Without it: hunger or "worn".
 //
 // ENDING
 //   title, text
@@ -63,6 +75,9 @@
 //                      "ancient" the cat lived through the very last step
 //                      no "when" = the cat died of old age
 //   mood  : (optional) "sad" = only if the cat ended its life unhappy
+//   cause : (optional) only for a cat killed this way, young or later (see
+//           "kind" in CAUSES): "road", "attack", "fall", "cold", "trash", "sick", "poison".
+//           These win over the other endings, and need no "when".
 //   If several special endings are possible, one is drawn at random.
 //   Endings with no condition are only used when no special ending fits.
 //
@@ -162,11 +177,18 @@ const COAT_LINES = {
 //   stats  : added to START_STATS
 //   marks  : marks the cat starts with
 //   breeds : how likely each breed is, for a cat born here (see BREEDS)
+//   hunger : (optional) food lost at each step while young (Newborn to Young):
+//            a street kitten never quite eats enough
+//   danger : how likely a deadly outcome is to really kill it (1 = always as
+//            written in "deadly"). A cat with a home goes out less, and goes
+//            back to a bowl and a vet.
 // What the birth screen says about each place is in each city (“origins”).
 const ORIGINS = {
   street: {
     chance: 0.6,
     label: "Street cat",
+    danger: 1.4,
+    hunger: 2,
     stats: { strength: 4 },
     marks: [],
     breeds: { mixed: 96, persian: 2, bobtail: 2 },
@@ -174,6 +196,7 @@ const ORIGINS = {
   shelter: {
     chance: 0.25,
     label: "Shelter cat",
+    danger: 1,
     stats: { health: 10, happy: -5 },
     marks: [],
     breeds: { mixed: 82, persian: 8, mainecoon: 5, bobtail: 5 },
@@ -181,6 +204,7 @@ const ORIGINS = {
   home: {
     chance: 0.15,
     label: "House cat",
+    danger: 0.3,
     stats: { health: 15, happy: 10, strength: -4 },
     marks: ["home"],
     breeds: { mixed: 45, persian: 25, mainecoon: 20, bobtail: 10 },
@@ -262,6 +286,48 @@ const CONDITIONS = {
   strong: { label: "Strong and well fed", gained: "You feel strong. Your coat shines. Other cats move aside a little." },
   ok: { label: "Getting by", gained: "" },
   weak: { label: "Thin and sick", gained: "Your nose is warm and dry. You sleep more than you should." },
+};
+
+// How a cat can die. Shown on the ending card, with the age.
+//   kind : the family of the cause; an ending with "cause" (see ENDING)
+//          is only told for a death of that kind. A kind with no such ending
+//          ("worn", "water") gets the city's plain endings.
+//   line : what killed the cat. {caught} = the age it caught an illness
+const CAUSES = {
+  car: { kind: "road", line: "Hit by a car" },
+  tram: { kind: "road", line: "Hit by the tram" },
+  train: { kind: "road", line: "Hit by a train" },
+  engine: { kind: "road", line: "Asleep in a car engine when it started" },
+  seagull: { kind: "attack", line: "Taken by a seagull" },
+  crow: { kind: "attack", line: "Taken by a crow" },
+  dogs: { kind: "attack", line: "Killed by stray dogs" },
+  stick: { kind: "attack", line: "Beaten by boys with a stick" },
+  fall: { kind: "fall", line: "Fell from a roof" },
+  cold: { kind: "cold", line: "Cold and hunger, alone" },
+  flood: { kind: "water", line: "Drowned in the rainy season" },
+  hunger: { kind: "worn", line: "Starved" },
+  worn: { kind: "worn", line: "Worn out by too many bad days" },
+  fiv: { kind: "sick", line: "FIV, from a bite in a fight at {caught}" },
+  felv: { kind: "sick", line: "Feline leukaemia, caught from another cat at {caught}" },
+  poison: { kind: "poison", line: "Rat poison" },
+  trash: { kind: "trash", line: "Thrown out with the trash" },
+  age: { kind: "age", line: "Old age" },
+};
+
+// Illnesses a cat can catch without knowing it (see "catches" in CHOICE).
+// They are never shown on screen. They can kill it later, between two steps,
+// and the ending card says where they came from.
+//   from    : the first chapter (0 = Newborn ... 5 = Old age) where it can kill
+//   risk    : chance to die of it after each step, from then on
+//   drain   : health lost after each step, from then on
+//   vaccine : cats born in a shelter or a home are vaccinated against it
+const ILLNESSES = {
+  // FIV passes through bites, mostly between toms who fight. A cat can
+  // carry it for years without showing anything (Cornell Feline Health Center).
+  fiv: { from: 4, risk: 0.3, drain: -8 },
+  // FeLV passes through saliva: shared bowls, grooming. 80 to 90% of
+  // infected cats die within 3 or 4 years. A vaccine exists (VCA Hospitals).
+  felv: { from: 3, risk: 0.3, drain: -6, vaccine: true },
 };
 
 const STORIES = {
@@ -395,10 +461,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "bakery",
-          text: "You are the size of a msemen. Your mother left “for five minutes” this morning. Above you, the baker pulls down his shutter. It sounds like the end of the world.",
+          text: "You are the size of a msemen. Your mother left “for five minutes”. That was yesterday morning. Above you, the baker pulls down his shutter. It sounds like the end of the world. Tomorrow is Friday. He doesn’t open on Fridays.",
           choices: [
             {
               label: "Scream until he looks down",
+              deadly: { chance: 0.25, cause: "cold", text: "You scream until your voice is gone. He doesn’t hear you over the shutter. It stays down all Friday. On Saturday, there is no more screaming." },
               chance: 0.6,
               bonus: { brave: 0.1, shy: -0.2 },
               good: "He sighs like a man who already feeds four cats. Bread in milk. A cardboard box. He belongs to you now.",
@@ -409,6 +476,7 @@ const STORIES = {
             },
             {
               label: "Wait in silence for your mother",
+              deadly: { chance: 0.4, cause: "cold", text: "She doesn’t come back. You wait against the shutter, then you stop waiting. On Monday the baker opens up, and finds you there, a few hours too late." },
               chance: 0.45,
               good: "She comes back at dawn with a sardine head and a long-day face. She stays a little longer than usual.",
               bad: "She doesn’t come back. You wait two days. Waiting, it turns out, is not a meal.",
@@ -424,6 +492,7 @@ const STORIES = {
           choices: [
             {
               label: "Puff up and hiss",
+              deadly: { chance: 0.5, cause: "seagull", text: "It doesn’t care how big you look. A shadow, a wing, and then the sky, very close. Your sisters stay in the crack until dark, and nobody makes a sound." },
               gesture: "hold",
               chance: 0.4,
               bonus: { brave: 0.3, shy: -0.2 },
@@ -435,6 +504,7 @@ const STORIES = {
             },
             {
               label: "Squeeze into the crack in the wall",
+              deadly: { chance: 0.25, cause: "seagull", text: "The crack is deep enough for your sisters. For you, almost. A beak can reach a long way into a wall, it turns out." },
               gesture: "hold",
               chance: 0.7,
               bonus: { shy: 0.2 },
@@ -501,10 +571,11 @@ const STORIES = {
         {
           origin: "home",
           scene: "home",
-          text: "The front door is open. The plumber is fixing the sink and complaining about the last plumber. Outside: the whole street, and it smells of grilled sardines.",
+          text: "The front door is open. The plumber is fixing the sink and complaining about the last plumber. Outside: the whole street, the cars nobody slows down for, and a smell of grilled sardines.",
           choices: [
             {
               label: "Go and see",
+              deadly: { chance: 0.5, cause: "car", text: "A car honks. You run the wrong way, then the wrong way again, into the road. The daughter looks for you until midnight with a torch, three streets away." },
               chance: 0.55,
               bonus: { curious: 0.2, brave: 0.1 },
               good: "You do the tour: the hanout, the garage, the warm hood of a Dacia. You’re back for dinner. Nobody noticed. You do this every day for the rest of your life.",
@@ -573,10 +644,11 @@ const STORIES = {
         {
           fact: "falls",
           scene: "roofs",
-          text: "A roof terrace in the medina. Washing lines, a satellite dish, and a pigeon on the very edge. It hasn’t seen you.",
+          text: "A roof terrace in the medina. Washing lines, a satellite dish, and a pigeon on the very edge. Below the edge, three floors and a street of stones. The pigeon hasn’t seen you.",
           choices: [
             {
               label: "Pounce",
+              deadly: { chance: 0.4, cause: "fall", text: "You miss the pigeon. Cats turn in the air and land on their feet. You do turn. The street of stones comes before your feet do. The pigeon stays on the edge, looking down." },
               gesture: "pounce",
               chance: 0.35,
               bonus: { brave: 0.1, clever: 0.1 },
@@ -589,6 +661,7 @@ const STORIES = {
             },
             {
               label: "Stalk it slowly",
+              deadly: { chance: 0.25, cause: "fall", text: "A woman comes up to hang her washing. She screams. You run, the wrong way, toward the edge. The pigeon flies off. You can’t." },
               gesture: "hold",
               chance: 0.6,
               bonus: { clever: 0.2, shy: 0.1 },
@@ -601,10 +674,11 @@ const STORIES = {
         {
           fact: "lapping",
           scene: "fountain",
-          text: "The fountain in the square. Water runs out of a brass tap all day. You are very thirsty, and very small.",
+          text: "The fountain in the square. Water runs out of a brass tap all day. Every cat in the square drinks from the basin, even the thin grey one who sleeps all day. You are very thirsty, and very small.",
           choices: [
             {
               label: "Drink from the basin",
+              catches: { ill: "felv", chance: 0.35 },
               chance: 0.7,
               good: "Your tongue barely touches the water. It pulls up a little column, and you snap it. Again and again, very fast. You are a genius.",
               bad: "A boy splashes you on purpose. You drink anyway, soaked and furious.",
@@ -625,10 +699,11 @@ const STORIES = {
       // --------------------------------------------------------
       Young: [
         {
-          text: "Three days of rain. Every dry corner near the market is taken. The best one belongs to a huge orange tom who terrorises everyone, humans included.",
+          text: "Three days of rain. Every dry corner near the market is taken. The best one belongs to a huge orange tom who terrorises everyone, humans included. His ears are torn to lace. He bites first.",
           choices: [
             {
               label: "Take his spot",
+              catches: { ill: "fiv", chance: 0.45 },
               chance: 0.3,
               bonus: { brave: 0.2, shy: -0.2 },
               stat: "strength",
@@ -641,6 +716,7 @@ const STORIES = {
             },
             {
               label: "Slip under a parked car",
+              deadly: { chance: 0.25, cause: "engine", text: "The engine is warm, so you sleep right up against it. At six in the morning, the driver turns the key. He never knew you were there." },
               chance: 0.7,
               good: "The engine is still warm. Under an old Dacia that smells of oranges and petrol, you sleep better than in weeks.",
               bad: "At six in the morning, the car starts. You run, soaked and screaming, all the way to the river.",
@@ -650,7 +726,7 @@ const STORIES = {
         },
         {
           scene: "walls",
-          text: "A little girl crouches near the Oudayas. She holds out her hand very slowly, like it’s a big responsibility. Her mother is calling her, louder each time.",
+          text: "A little girl crouches near the Oudayas. She holds out her hand very slowly, like it’s a big responsibility. Her mother is calling her, louder each time. Behind them, three boys with a stick are looking for something to do.",
           choices: [
             {
               label: "Let her pet you",
@@ -666,6 +742,7 @@ const STORIES = {
             },
             {
               label: "Run",
+              deadly: { chance: 0.3, cause: "stick", text: "You run straight into the three boys. They find something to do. The girl cries all the way home, and her mother doesn’t understand why." },
               chance: 0.8,
               good: "Nobody owns you. Nobody will ever disappoint you. It’s a good system, mostly.",
               bad: "You run straight into three boys with a stick. From now on, hands are guilty until proven innocent.",
@@ -701,12 +778,13 @@ const STORIES = {
         },
         {
           scene: "tram",
-          text: "The tram rings its bell. On the other side of the tracks, the fish guy is throwing out what he couldn’t sell. Five cats have seen it.",
+          text: "The tram rings its bell. On the other side of the tracks, the fish guy is throwing out what he couldn’t sell. Five cats have seen it. The tram doesn’t stop for cats. It barely stops for people. And here, it runs both ways.",
           choices: [
             {
               // Traffic is what kills most young street cats (median age 2.7 years
               // for cats killed on the road, RVC study 2017), so this is a bad bet.
               label: "Cross now",
+              deadly: { chance: 0.5, cause: "tram", text: "You are fast. The tram is faster. The fish guy stops throwing fish for a moment and looks at the tracks. Then the bell rings, and the street goes on." },
               mods: [
                 { needs: "limp", bad: "Your bad leg is too slow for the tram. Again. You make it across, barely, and the sardine is gone." },
               ],
@@ -721,6 +799,7 @@ const STORIES = {
             },
             {
               label: "Wait for the tram to pass",
+              deadly: { chance: 0.25, cause: "tram", text: "You wait. The tram passes. You cross, very proud of your patience. The one coming the other way doesn’t ring its bell." },
               chance: 0.7,
               bonus: { clever: 0.2 },
               good: "While the others fight over the first fish, you find the one under the stall. Nobody saw. You tell nobody.",
@@ -732,7 +811,7 @@ const STORIES = {
         },
         {
           scene: "market",
-          text: "Outside the hanout, six cats sit in a row on the step, like customers. The owner gives scraps to whoever looks the most tragic.",
+          text: "Outside the hanout, six cats sit in a row on the step, like customers. The owner gives scraps to whoever looks the most tragic. The hanout is on the corner of the avenue, where the taxis never brake.",
           choices: [
             {
               label: "Look as tragic as possible",
@@ -748,6 +827,7 @@ const STORIES = {
             },
             {
               label: "Slip inside behind a customer",
+              deadly: { chance: 0.35, cause: "car", text: "“Barra!” You run out, straight into the avenue. The taxi doesn’t brake. On the step, the six cats look at the road for a while, then back at the door." },
               gesture: "run",
               chance: 0.4,
               bonus: { brave: 0.2, curious: 0.1 },
@@ -760,10 +840,11 @@ const STORIES = {
         },
         {
           scene: "tram",
-          text: "You fall asleep in the open boot of a petit taxi. You wake up in Salé, on the other side of the river. Nothing smells right.",
+          text: "You fall asleep in the open boot of a petit taxi. You wake up in Salé, on the other side of the river. Between you and home: a bridge, and four lanes of traffic. Nothing smells right.",
           choices: [
             {
               label: "Walk home",
+              deadly: { chance: 0.35, cause: "car", text: "The bridge is fine. The four lanes at the end are not. You were so close you could smell your street." },
               mods: [
                 { needs: "baker", good: "Two days. One bridge. You follow the smell of the sea, then the smell of your bakery. The baker says “Fin kunti?” Where were you? Like a worried father." },
               ],
@@ -791,10 +872,11 @@ const STORIES = {
       Adult: [
         {
           scene: "roofs",
-          text: "Spring. A tabby with green eyes has been staring at you from the next roof for three evenings. Either she likes you or she wants your roof.",
+          text: "Spring. A tabby with green eyes has been staring at you from the next roof for three evenings. Either she likes you or she wants your roof. Two big toms with torn ears are watching her too.",
           choices: [
             {
               label: "Follow her",
+              catches: { ill: "fiv", chance: 0.3 },
               mods: [
                 { cond: "strong", chance: 0.15, why: "Strong and well fed", good: "Your coat shines. She doesn’t hesitate. Two months later, four kittens are born in a broken washing machine." },
               ],
@@ -840,10 +922,11 @@ const STORIES = {
         {
           needs: "gang",
           scene: "market",
-          text: "The big orange tom is getting slow. He sleeps more than he terrorises. The young cats are looking at you. The fish market could be yours.",
+          text: "The big orange tom is getting slow. He sleeps more than he terrorises. The young cats are looking at you. The fish market could be yours. He still bites like he means it.",
           choices: [
             {
               label: "Take his place",
+              catches: { ill: "fiv", chance: 0.4 },
               chance: 0.5,
               bonus: { brave: 0.2 },
               stat: "strength",
@@ -971,6 +1054,7 @@ const STORIES = {
           choices: [
             {
               label: "Run for the rocks",
+              deadly: { chance: 0.35, cause: "dogs", text: "The rocks are too far, by about one dog. In the morning, the fishermen find the sand all churned up, and say nothing." },
               gesture: "run",
               chance: 0.55,
               bonus: { clever: 0.2 },
@@ -981,6 +1065,7 @@ const STORIES = {
             },
             {
               label: "Stand your ground and hiss",
+              deadly: { chance: 0.55, cause: "dogs", text: "You hiss. You fight. Three is too many, and they practised. The sea is very loud that night. Nobody hears anything." },
               mods: [
                 { needs: "boss", chance: 0.2, why: "King of the market", good: "The biggest dog sees who you are. Even dogs have heard of the king of the market. They leave." },
                 { needs: "scar", chance: 0.1, why: "Battle scars", good: "The biggest dog looks at your torn ear. He decides not to find out how you got it." },
@@ -1002,6 +1087,7 @@ const STORIES = {
           choices: [
             {
               label: "Taste them",
+              deadly: { chance: 0.6, cause: "poison", text: "They taste almost like food. Nothing happens for three days. Then your gums go white, and you hide under a car, and you don’t come out." },
               chance: 0.2,
               bonus: { clever: -0.1 },
               good: "One lick, and you know. You spit, you foam, you live. You never go near that stairwell again.",
@@ -1237,6 +1323,7 @@ const STORIES = {
           choices: [
             {
               label: "Sleep on the warm rail",
+              deadly: { chance: 0.45, cause: "tram", text: "The rail is warm, and you don’t hear as well as you used to. The driver rings twice. The second time, he has already understood." },
               chance: 0.4,
               bonus: { clever: -0.1 },
               good: "The driver stops. Rings twice. Waits. You get up slowly, with dignity. Twenty people clap.",
@@ -1256,6 +1343,36 @@ const STORIES = {
       ],
     },
     endings: [
+      {
+        cause: "road",
+        title: "The other side of the road",
+        text: "You crossed Rabat’s roads like they belonged to you, always at the worst moment, always with style. Cars were just loud animals who didn’t know your name. Someone carried you to the pavement, gently, and covered you with a flattened box from the bakery.",
+      },
+      {
+        cause: "attack",
+        title: "Ten times your size",
+        text: "All your life, you puffed up at things ten times your size: gulls, dogs, buses, the baker’s broom. Most of the time, it worked. The one time it didn’t is the only time that counted.",
+      },
+      {
+        cause: "fall",
+        title: "Feet first, almost",
+        text: "Cats always land on their feet. You did, nearly every time, and you were very smug about it. The washing on that roof stayed up for three days. Nobody felt like taking it down.",
+      },
+      {
+        cause: "cold",
+        title: "The shutter",
+        text: "You waited by the bakery shutter like it owed you something. In Rabat, the bread is ready at six. That morning, you weren’t there to smell it. The baker put the saucer out anyway, out of habit, for a week.",
+      },
+      {
+        cause: "sick",
+        title: "The quiet one",
+        text: "For years, nothing showed. You ate, you fought, you ruled your roof. Then you got a little thinner every week, and nobody knew why, least of all you. The man at the hanout kept your bowl out until the end of summer.",
+      },
+      {
+        cause: "poison",
+        title: "Blue grains",
+        text: "Someone in the building wanted fewer rats. In spring, the man on the second floor bought another box of the blue grains. He never saw you again, and he never wondered why.",
+      },
       {
         when: "early",
         title: "Too small for Rabat",
@@ -1432,10 +1549,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "konbini",
-          text: "You are born in a box behind a convenience store. It’s 2 a.m. The night worker is on his break, eating a rice ball, looking at nothing.",
+          text: "You are born in a box behind a convenience store. It’s 2 a.m. The night worker is on his break, eating a rice ball, looking at nothing. All night, delivery trucks back into the alley without looking. On the box, in black marker: “BURNABLE — TUESDAY”. Tomorrow is Tuesday.",
           choices: [
             {
               label: "Crawl toward the light",
+              deadly: { chance: 0.4, cause: "car", text: "You crawl toward the light. The light is a truck, backing into the alley, beeping politely. The night worker finishes his rice ball and never knows." },
               chance: 0.6,
               bonus: { curious: 0.2, shy: -0.2 },
               good: "He sees you. He says nothing. He is very tired. The next night, there’s a saucer of water and a folded towel in the box.",
@@ -1446,6 +1564,7 @@ const STORIES = {
             },
             {
               label: "Stay hidden with your siblings",
+              deadly: { chance: 0.4, cause: "trash", text: "At 8 a.m. the truck comes, right on time, like everything in Tokyo. Your mother runs after it for two streets." },
               chance: 0.5,
               good: "Your mother moves you one by one, by the neck, to a garden behind a temple. You complain the whole way.",
               bad: "The box goes out with the morning trash. Your mother saves you. Not everyone.",
@@ -1457,10 +1576,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "park",
-          text: "Dawn in the park. The crows wake up first. One lands very close, tilts its head, and looks at you like a snack with legs.",
+          text: "Dawn in the park. The crows wake up first. One lands very close, tilts its head, and looks at you like a snack with legs. Tokyo crows hunt in pairs.",
           choices: [
             {
               label: "Hiss as loud as you can",
+              deadly: { chance: 0.6, cause: "crow", text: "Tokyo crows are clever. One hops in front of you, and the other one comes from behind. Your mother looks for you under every azalea in the park." },
               gesture: "hold",
               chance: 0.4,
               bonus: { brave: 0.3 },
@@ -1472,6 +1592,7 @@ const STORIES = {
             },
             {
               label: "Crawl under the azaleas",
+              deadly: { chance: 0.35, cause: "crow", text: "The first crow waits in front of the azaleas. The second one walks in from the back. Your mother comes looking, and finds the bush empty." },
               gesture: "hold",
               chance: 0.7,
               bonus: { shy: 0.2, clever: 0.1 },
@@ -1483,10 +1604,11 @@ const STORIES = {
         {
           origin: "street",
           scene: "street",
-          text: "Rainy season. Your box is turning into soup. A vending machine hums nearby, warm and bright, selling hot coffee to nobody.",
+          text: "Rainy season. Your box is turning into soup, and the gutter beside it is rising. A vending machine hums nearby, warm and bright, selling hot coffee to nobody. The shrine is on the other side of the road, behind the headlights.",
           choices: [
             {
               label: "Sleep behind the vending machine",
+              deadly: { chance: 0.3, cause: "flood", text: "Warm, dry, perfect. Then the gutter overflows in the night, and the water comes in behind the machine, where you are too small to climb out." },
               chance: 0.7,
               bonus: { clever: 0.1 },
               good: "Warm all night. The light keeps the rats away. You will love vending machines for the rest of your life.",
@@ -1495,6 +1617,7 @@ const STORIES = {
             },
             {
               label: "Follow your mother to the shrine",
+              deadly: { chance: 0.3, cause: "car", text: "You lose her in the rain, between two umbrellas. You step off the curb to look for her. The headlights don’t see you." },
               chance: 0.6,
               good: "Under the shrine floor, it’s dry and smells of old wood. Two stone foxes guard the door. Useless, but it’s the thought.",
               bad: "You lose her in the rain, between two umbrellas. You find her at dawn. You’re shaking. So is she.",
@@ -1539,10 +1662,11 @@ const STORIES = {
         {
           origin: "home",
           scene: "flat",
-          text: "The balcony door is open. Below: a train line, a hundred roofs, and a crow on the railing, looking at you like it has a question.",
+          text: "The balcony door is open. Six floors below: a train line, a hundred roofs, and a crow on the railing, looking at you like it has a question.",
           choices: [
             {
               label: "Jump onto the railing",
+              deadly: { chance: 0.45, cause: "fall", text: "The railing is thinner than it looked. Six floors is a long time to be a cat in the air. The woman buys a net the next day. It’s the wrong order." },
               gesture: "pounce",
               chance: 0.45,
               bonus: { brave: 0.2, curious: 0.1 },
@@ -1595,6 +1719,7 @@ const STORIES = {
           choices: [
             {
               label: "Jump for it",
+              deadly: { chance: 0.45, cause: "fall", text: "No moth. Four floors. You twist in the air, you get your feet under you, and it isn’t enough. A salaryman drops his umbrella and doesn’t pick it up." },
               gesture: "pounce",
               chance: 0.35,
               bonus: { brave: 0.1 },
@@ -1644,10 +1769,11 @@ const STORIES = {
       Young: [
         {
           scene: "park",
-          text: "Every evening, a woman with a parasol leaves food in a small park. Lots of cats come. There is a hierarchy. You are at the bottom.",
+          text: "Every evening, a woman with a parasol leaves food in a small park. Lots of cats come, twenty of them for four bowls. A thin grey one eats from every bowl and licks every face. There is a hierarchy. You are at the bottom.",
           choices: [
             {
               label: "Push to the front",
+              catches: { ill: "felv", chance: 0.4 },
               gesture: "run",
               chance: 0.4,
               bonus: { brave: 0.2, shy: -0.2 },
@@ -1676,7 +1802,7 @@ const STORIES = {
           fact: "eartip",
           notIf: "eartip",
           scene: "park",
-          text: "A volunteer in gloves crouches near you with a carrier. She speaks very softly. Other cats left with her and came back with a cut ear and a new attitude.",
+          text: "A volunteer in gloves crouches near you with a carrier. She speaks very softly. Other cats left with her and came back with a cut ear and a new attitude. Behind you, over the wall, the Kan-nana ring road roars all night.",
           choices: [
             {
               label: "Let her take you",
@@ -1689,6 +1815,7 @@ const STORIES = {
             },
             {
               label: "Escape over the wall",
+              deadly: { chance: 0.3, cause: "car", text: "You land on the other side of the wall. On the Kan-nana. Six lanes. The volunteer waits by the wall for an hour, then she goes home and crosses your photo off her list." },
               gesture: "run",
               chance: 0.7,
               bonus: { brave: 0.1, clever: 0.1 },
@@ -1703,10 +1830,11 @@ const STORIES = {
         },
         {
           scene: "station",
-          text: "A station at rush hour. Thousands of shoes, all going somewhere fast. Somewhere inside, a noodle stand drops things.",
+          text: "A station at rush hour. Thousands of shoes, all going somewhere fast. Somewhere inside, a noodle stand drops things. The trains come every two minutes, and the platform edge is very close to everything.",
           choices: [
             {
               label: "Go in with the crowd",
+              deadly: { chance: 0.3, cause: "train", text: "Someone steps on your paw. You jump the wrong way, off the platform. The 8:14 is one minute late that morning. The announcement apologises for the delay." },
               gesture: "run",
               chance: 0.4,
               bonus: { brave: 0.1, curious: 0.2, shy: -0.2 },
@@ -1717,10 +1845,11 @@ const STORIES = {
             },
             {
               label: "Wait outside until it’s quiet",
+              catches: { ill: "fiv", chance: 0.4, on: "bad" },
               chance: 0.7,
               bonus: { clever: 0.2 },
               good: "At midnight, the cook takes out the trash. He leaves the lid open. Just enough.",
-              bad: "Another cat had the same idea. It is bigger, and it was there first.",
+              bad: "Another cat had the same idea. It is bigger, it was there first, and it bites. You leave with a hole in your shoulder.",
               goodFx: { food: 2 },
               badFx: { food: -1 },
             },
@@ -1749,10 +1878,11 @@ const STORIES = {
           ],
         },
         {
-          text: "You fall asleep in a delivery truck full of warm boxes. When the doors open, you are in Saitama. Nothing smells like home.",
+          text: "You fall asleep in a delivery truck full of warm boxes. When the doors open, you are in Saitama. Between you and home: forty kilometres of Tokyo. Nothing smells like home.",
           choices: [
             {
               label: "Walk home",
+              deadly: { chance: 0.35, cause: "car", text: "Four nights. The tracks, the river, then a big road with no end. You were nearly home. You could smell the fried chicken." },
               chance: 0.5,
               bonus: { clever: 0.2, curious: 0.1 },
               stat: "strength",
@@ -1801,10 +1931,11 @@ const STORIES = {
         },
         {
           scene: "roofs",
-          text: "On the rooftops, a white cat with one blue eye and one yellow eye has noticed you. She looks at you with both. It’s a lot.",
+          text: "On the rooftops, a white cat with one blue eye and one yellow eye has noticed you. She looks at you with both. It’s a lot. A one-eared tom on the next roof thinks she is his.",
           choices: [
             {
               label: "Join her on her roof",
+              catches: { ill: "fiv", chance: 0.35 },
               chance: 0.6,
               bonus: { brave: 0.1, shy: -0.1 },
               good: "Two months later, three kittens are born behind a water tank. One has her strange eyes and your terrible manners.",
@@ -1929,10 +2060,11 @@ const STORIES = {
           ],
         },
         {
-          text: "Snow on Tokyo, the first in years. The streets go silent. Everything you know is white, cold, and wrong.",
+          text: "Snow on Tokyo, the first in years. The streets go silent. Everything you know is white, cold, and wrong. Inside the cars, the engines are the only warm thing left.",
           choices: [
             {
               label: "Find a car that just parked",
+              deadly: { chance: 0.35, cause: "engine", text: "You find a warm engine and climb right up into it. At six, the owner is in a hurry. He doesn’t knock on the bonnet. Nurses do. He isn’t one." },
               chance: 0.6,
               bonus: { clever: 0.2 },
               good: "A warm engine, every night at 4 a.m. A nurse coming home from her shift. She checks under the car before she starts it. Every time.",
@@ -1942,6 +2074,7 @@ const STORIES = {
             },
             {
               label: "Curl up in a doorway",
+              deadly: { chance: 0.25, cause: "cold", text: "Nobody opens the door. The snow keeps falling, very softly, all night. In the morning, the street is very clean and very white." },
               chance: 0.5,
               good: "In the morning, someone has left a cardboard box and an old scarf. Nobody stays to be thanked.",
               bad: "Someone opens the door and you fall backwards into a dentist’s waiting room. Chaos. One child is very happy.",
@@ -2183,6 +2316,36 @@ const STORIES = {
       ],
     },
     endings: [
+      {
+        cause: "road",
+        title: "The last crossing",
+        text: "Tokyo has the most careful drivers in the world. They stop at every red light, they bow to each other, they never honk. They just don’t look down. The next morning, at the corner, there was a can of tuna and a little paper cup of water, the way people leave them for people.",
+      },
+      {
+        cause: "attack",
+        title: "The crows remember",
+        text: "Tokyo crows are the cleverest birds in the city, and they had all morning. You hissed at the first one. It was the second one you should have watched. A boy in a yellow hat looked for you in the azaleas for a week.",
+      },
+      {
+        cause: "fall",
+        title: "Too high",
+        text: "You loved high places more than anything: railings, roofs, water tanks, the top of the fridge. Nothing was ever too high, until once. That summer, the building put nets on every balcony. Nobody said why.",
+      },
+      {
+        cause: "cold",
+        title: "The first snow",
+        text: "Tokyo had not seen snow in years, and you had never seen it at all. It was beautiful for about an hour. In the morning, the children made a snowman by the doorway, and gave it a little cat, also made of snow.",
+      },
+      {
+        cause: "trash",
+        title: "Burnable, Tuesday",
+        text: "Fourteen million people, and every one of them was busy that day. Tokyo is very good at taking things away on time: the trains, the trash, the snow. A little cat is not on any schedule.",
+      },
+      {
+        cause: "sick",
+        title: "A slow winter",
+        text: "For years, nothing showed. You ate, you fought on the roofs, you ran your alley. Then you got a little thinner every week, and you slept more, and nobody knew why. The woman with the parasol kept your bowl full until spring, just in case.",
+      },
       {
         when: "early",
         title: "Like the cherry blossoms",
